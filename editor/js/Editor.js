@@ -90,6 +90,7 @@ var Editor = function () {
 	this.materials = {};
 	this.textures = {};
 	this.scripts = {};
+	this.animations = [];
 
 	this.selected = null;
 	this.helpers = {};
@@ -149,6 +150,8 @@ Editor.prototype = {
 		} );
 
 		this.scene.add( object );
+
+		console.log('this.scene', this.scene);
 
 		this.signals.objectAdded.dispatch( object );
 		this.signals.sceneGraphChanged.dispatch();
@@ -511,6 +514,23 @@ Editor.prototype = {
 
 		}
 
+		var sceneJson = this.scene.toJSON();
+		sceneJson.animations = this.animations;
+
+		// (function writeAnimation(object) {
+		// 	console.log(Object.keys(this.animations));
+		// 	if (Object.keys(this.animations).includes(object.uuid)) {
+		// 		object.animations = this.animations[object.uuid];
+		// 	}
+    //
+		// 	if (object.children)
+		// 		object.children.forEach(child => writeAnimation.call(this, child));
+		// }).call(this, sceneJson.object);
+
+		console.log('sceneJson', sceneJson);
+
+		// debugger;
+
 		//
 
 		return {
@@ -523,7 +543,7 @@ Editor.prototype = {
 				vr: this.config.getKey( 'project/vr' )
 			},
 			camera: this.camera.toJSON(),
-			scene: this.scene.toJSON(),
+			scene: sceneJson,
 			scripts: this.scripts,
 			history: this.history.toJSON()
 

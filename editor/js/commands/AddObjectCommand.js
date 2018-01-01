@@ -8,7 +8,7 @@
  * @constructor
  */
 
-var AddObjectCommand = function ( object ) {
+var AddObjectCommand = function ( object, dataAnimations ) {
 
 	Command.call( this );
 

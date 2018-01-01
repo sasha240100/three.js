@@ -138,6 +138,7 @@ Menubar.File = function ( editor ) {
 		}
 
 		var output = object.toJSON();
+		output.animations = editor.animations;
 
 		try {
 
@@ -163,6 +164,7 @@ Menubar.File = function ( editor ) {
 	option.onClick( function () {
 
 		var output = editor.scene.toJSON();
+		output.animations = editor.animations;
 
 		try {
 

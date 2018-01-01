@@ -190,7 +190,7 @@ var Loader = function ( editor ) {
 				break;
 
 			case 'js':
-			case 'json':
+			case 'json': // @WORK
 
 			case '3geo':
 			case '3mat':
@@ -461,7 +461,8 @@ var Loader = function ( editor ) {
 
 	};
 
-	function handleJSON( data, file, filename ) {
+	function handleJSON( data, file, filename ) { // @WORK
+		console.log(data);
 
 		if ( data.metadata === undefined ) { // 2.0
 
@@ -529,7 +530,7 @@ var Loader = function ( editor ) {
 
 				if ( geometry.animation && geometry.animation.hierarchy ) {
 
-					mesh = new THREE.SkinnedMesh( geometry, material );
+					mesh = new THREE.SkinnedMesh( geometry, material ); // @NOTE 1
 
 				} else {
 
@@ -548,6 +549,7 @@ var Loader = function ( editor ) {
 				var loader = new THREE.ObjectLoader();
 				loader.setTexturePath( scope.texturePath );
 
+				editor.animations = editor.animations.concat(data.animations);
 				var result = loader.parse( data );
 
 				if ( result instanceof THREE.Scene ) {

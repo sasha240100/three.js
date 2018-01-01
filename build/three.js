@@ -65,6 +65,8 @@
 
 			Object.assign = function ( target ) {
 
+				'use strict';
+
 				if ( target === undefined || target === null ) {
 
 					throw new TypeError( 'Cannot convert undefined or null to object' );
@@ -37608,6 +37610,49 @@
 	};
 
 	/**
+	 * @author bhouston / http://clara.io/
+	 */
+
+	function AnimationLoader( manager ) {
+
+		this.manager = ( manager !== undefined ) ? manager : DefaultLoadingManager;
+
+	}
+
+	Object.assign( AnimationLoader.prototype, {
+
+		load: function ( url, onLoad, onProgress, onError ) {
+
+			var scope = this;
+
+			var loader = new FileLoader( scope.manager );
+			loader.load( url, function ( text ) {
+
+				onLoad( scope.parse( JSON.parse( text ) ) );
+
+			}, onProgress, onError );
+
+		},
+
+		parse: function ( json, onLoad ) {
+
+			var animations = [];
+
+			for ( var i = 0; i < json.length; i ++ ) {
+
+				var clip = AnimationClip.parse( json[ i ] );
+
+				animations.push( clip );
+
+			}
+
+			onLoad( animations );
+
+		}
+
+	} );
+
+	/**
 	 * @author thespite / http://clicktorelease.com/
 	 */
 
@@ -38112,7 +38157,13 @@
 							cpx0 = laste.x;
 							cpy0 = laste.y;
 
-							
+							for ( var i2 = 1; i2 <= divisions; i2 ++ ) {
+
+								var t = i2 / divisions;
+								QuadraticBezier( t, cpx0, cpx1, cpx );
+								QuadraticBezier( t, cpy0, cpy1, cpy );
+
+							}
 
 						}
 
@@ -38136,7 +38187,13 @@
 							cpx0 = laste.x;
 							cpy0 = laste.y;
 
-							
+							for ( var i2 = 1; i2 <= divisions; i2 ++ ) {
+
+								var t = i2 / divisions;
+								CubicBezier( t, cpx0, cpx1, cpx2, cpx );
+								CubicBezier( t, cpy0, cpy1, cpy2, cpy );
+
+							}
 
 						}
 
@@ -45662,6 +45719,7 @@
 	exports.DefaultLoadingManager = DefaultLoadingManager;
 	exports.LoadingManager = LoadingManager;
 	exports.JSONLoader = JSONLoader;
+	exports.AnimationLoader = AnimationLoader;
 	exports.ImageLoader = ImageLoader;
 	exports.ImageBitmapLoader = ImageBitmapLoader;
 	exports.FontLoader = FontLoader;

@@ -41,6 +41,7 @@ export { MaterialLoader } from './loaders/MaterialLoader.js';
 export { BufferGeometryLoader } from './loaders/BufferGeometryLoader.js';
 export { DefaultLoadingManager, LoadingManager } from './loaders/LoadingManager.js';
 export { JSONLoader } from './loaders/JSONLoader.js';
+export { AnimationLoader } from './loaders/AnimationLoader.js';
 export { ImageLoader } from './loaders/ImageLoader.js';
 export { ImageBitmapLoader } from './loaders/ImageBitmapLoader.js';
 export { FontLoader } from './loaders/FontLoader.js';
