@@ -462,7 +462,6 @@ var Loader = function ( editor ) {
 	};
 
 	function handleJSON( data, file, filename ) { // @WORK
-		console.log(data);
 
 		if ( data.metadata === undefined ) { // 2.0
 
@@ -549,7 +548,6 @@ var Loader = function ( editor ) {
 				var loader = new THREE.ObjectLoader();
 				loader.setTexturePath( scope.texturePath );
 
-				editor.animations = editor.animations.concat(data.animations);
 				var result = loader.parse( data );
 
 				if ( result instanceof THREE.Scene ) {
@@ -571,6 +569,62 @@ var Loader = function ( editor ) {
 				break;
 
 		}
+
+		editor.animations = editor.animations.concat(data.animations || []);
+
+		if ('animation' in data) {
+			// console.log('result.geometry', result.geometry);
+			editor.animations = editor.animations.concat(
+				result.geometry.animations.map(anim => THREE.AnimationClip.toJSON(anim))
+			);
+		}
+
+		// console.log('editor.animations', editor.animations);
+
+		function syncGeometry(geometry) {
+			const geometryData = editor.geometryData[geometry.uuid] = {};
+
+			switch (data.metadata.type.toLowerCase()) {
+				case 'geometry':
+					// morphTargets
+					if (geometry.morphTargets.length >= 1)
+						geometryData.morphTargets = clone(data.morphTargets);
+
+					// bones
+					if (geometry.bones.length >= 1)
+						geometryData.bones = clone(data.bones);
+
+					// skinIndices
+					if (geometry.skinIndices.length >= 1)
+						geometryData.skinIndices = clone(data.skinIndices);
+
+					// skinWeights
+					if (geometry.skinWeights.length >= 1)
+						geometryData.skinWeights = clone(data.skinWeights);
+
+					// faceVertexUvs
+					if (geometry.faceVertexUvs.length >= 1) {
+						geometryData.uvs = clone(data.uvs);
+						// Copy other data because it depends
+						geometryData.faces = clone(data.faces);
+						geometryData.normals = clone(data.normals);
+					}
+					break;
+				default:
+					break;
+			}
+		}
+
+		console.log('data', data);
+		console.log('result', result);
+
+		if (result) {
+			if (result.geometry)
+				syncGeometry(result.geometry);
+			else if (result instanceof THREE.Object3D)
+				result.traverse((child) => syncGeometry(child));
+		}
+			// console.log('result', result);
 
 	}
 

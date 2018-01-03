@@ -90,6 +90,9 @@ var Editor = function () {
 	this.materials = {};
 	this.textures = {};
 	this.scripts = {};
+	// Handle animations
+	this.meshData = {};
+	this.geometryData = {};
 	this.animations = [];
 
 	this.selected = null;
@@ -150,8 +153,6 @@ Editor.prototype = {
 		} );
 
 		this.scene.add( object );
-
-		console.log('this.scene', this.scene);
 
 		this.signals.objectAdded.dispatch( object );
 		this.signals.sceneGraphChanged.dispatch();
@@ -515,7 +516,20 @@ Editor.prototype = {
 		}
 
 		var sceneJson = this.scene.toJSON();
-		sceneJson.animations = this.animations;
+
+
+		// Keyframed animatiom
+		if (this.animations.length > 0)
+			sceneJson.animations = this.animations;
+
+		// // Keyframed animation with hierarchy
+		// if (this.animations)
+		// 	sceneJson.animation = this.animations;
+
+		sceneJson.geometries.forEach(geometry => {
+			if (geometry.uuid in this.geometryData)
+				geometry.data = Object.assign(geometry.data, this.geometryData[geometry.uuid]);
+		})
 
 		// (function writeAnimation(object) {
 		// 	console.log(Object.keys(this.animations));
@@ -527,11 +541,7 @@ Editor.prototype = {
 		// 		object.children.forEach(child => writeAnimation.call(this, child));
 		// }).call(this, sceneJson.object);
 
-		console.log('sceneJson', sceneJson);
-
-		// debugger;
-
-		//
+		// console.log('sceneJson', sceneJson);
 
 		return {
 
