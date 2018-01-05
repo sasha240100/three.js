@@ -140,6 +140,13 @@ Menubar.File = function ( editor ) {
 		var output = object.toJSON();
 		output.animations = editor.animations;
 
+		if ('geometries' in output) {
+			output.geometries.forEach(geometry => {
+				if (geometry.uuid in editor.geometryData)
+					geometry.data = Object.assign(geometry.data, editor.geometryData[geometry.uuid]);
+			});
+		}
+
 		try {
 
 			output = JSON.stringify( output, parseNumber, '\t' );
@@ -165,6 +172,13 @@ Menubar.File = function ( editor ) {
 
 		var output = editor.scene.toJSON();
 		output.animations = editor.animations;
+
+		if ('geometries' in output) {
+			output.geometries.forEach(geometry => {
+				if (geometry.uuid in editor.geometryData)
+					geometry.data = Object.assign(geometry.data, editor.geometryData[geometry.uuid]);
+			});
+		}
 
 		try {
 

@@ -526,10 +526,14 @@ Editor.prototype = {
 		// if (this.animations)
 		// 	sceneJson.animation = this.animations;
 
-		sceneJson.geometries.forEach(geometry => {
-			if (geometry.uuid in this.geometryData)
-				geometry.data = Object.assign(geometry.data, this.geometryData[geometry.uuid]);
-		})
+		if ('geometries' in sceneJson) {
+			sceneJson.geometries.forEach(geometry => {
+				if (geometry.uuid in this.geometryData)
+					geometry.data = Object.assign(geometry.data, this.geometryData[geometry.uuid]);
+			});
+		}
+
+		// alert('test');
 
 		// (function writeAnimation(object) {
 		// 	console.log(Object.keys(this.animations));
@@ -541,7 +545,7 @@ Editor.prototype = {
 		// 		object.children.forEach(child => writeAnimation.call(this, child));
 		// }).call(this, sceneJson.object);
 
-		// console.log('sceneJson', sceneJson);
+		console.log('sceneJson', sceneJson);
 
 		return {
 

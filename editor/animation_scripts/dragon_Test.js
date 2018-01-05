@@ -24,7 +24,6 @@ function scaleWithAnimation(geometry, scale) {
   return geometry;
 }
 
-
 // dragon.js
 
 var test = this.getObjectByName('Test');
