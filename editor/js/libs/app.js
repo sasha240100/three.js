@@ -122,6 +122,7 @@ var APP = {
 		this.setScene = function ( value ) {
 
 			scene = value;
+			this.scene = scene; // TODO: fix
 
 		};
 

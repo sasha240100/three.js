@@ -30,6 +30,25 @@ var Player = function ( editor ) {
 		player.setSize( container.dom.clientWidth, container.dom.clientHeight );
 		player.play();
 
+		const scene = player.scene;
+
+		var mixer = new THREE.AnimationMixer();
+
+		scene.traverse(object => {
+			if (object.geometry && object.geometry.animations) {
+				object.material.morphTargets = true;
+				var action = mixer.clipAction(object.geometry.animations[0], object);
+				action.setDuration(1).play();
+			}
+		})
+
+		function upd() {
+			requestAnimationFrame(upd);
+			mixer.update(1/60);
+		}
+
+		upd();
+
 	} );
 
 	signals.stopPlayer.add( function () {

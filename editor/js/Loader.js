@@ -587,23 +587,23 @@ var Loader = function ( editor ) {
 			switch (data.metadata.type.toLowerCase()) {
 				case 'geometry':
 					// morphTargets
-					if (geometry.morphTargets.length >= 1)
+					if (geometry.morphTargets && geometry.morphTargets.length >= 1)
 						geometryData.morphTargets = clone(data.morphTargets);
 
 					// bones
-					if (geometry.bones.length >= 1)
+					if (geometry.bones && geometry.bones.length >= 1)
 						geometryData.bones = clone(data.bones);
 
 					// skinIndices
-					if (geometry.skinIndices.length >= 1)
+					if (geometry.skinIndices && geometry.skinIndices.length >= 1)
 						geometryData.skinIndices = clone(data.skinIndices);
 
 					// skinWeights
-					if (geometry.skinWeights.length >= 1)
+					if (geometry.skinWeights && geometry.skinWeights.length >= 1)
 						geometryData.skinWeights = clone(data.skinWeights);
 
 					// faceVertexUvs
-					if (geometry.faceVertexUvs.length >= 1) {
+					if (geometry.faceVertexUvs && geometry.faceVertexUvs.length >= 1) {
 						geometryData.uvs = clone(data.uvs);
 						// Copy other data because it depends
 						geometryData.faces = clone(data.faces);
