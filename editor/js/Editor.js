@@ -197,6 +197,11 @@ Editor.prototype = {
 
 		var scope = this;
 
+		delete this.animations[object.uuid];
+		
+		if (object.geometry)
+			delete this.animations[object.geometry.uuid];
+
 		object.traverse( function ( child ) {
 
 			scope.removeHelper( child );
@@ -520,8 +525,8 @@ Editor.prototype = {
 
 
 		// Keyframed animatiom
-		if (this.animations.length > 0)
-			sceneJson.animations = this.animations;
+		if (Object.values(this.animations).length > 0)
+			sceneJson.animations = [].concat(...Object.values(this.animations));
 
 		// // Keyframed animation with hierarchy
 		// if (this.animations)

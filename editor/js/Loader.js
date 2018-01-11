@@ -161,6 +161,14 @@ var Loader = function ( editor ) {
 
 					var loader = new THREE.FBXLoader();
 					var object = loader.parse( contents );
+					console.log('fbx_object', object);
+
+					// editor.animations = editor.animations.concat(
+					// 	object.animations ? object.animations.map(anim => THREE.AnimationClip.toJSON(anim)) : []
+					// );
+
+					if (object.animations)
+						editor.animations[object.uuid] = object.animations.map(anim => THREE.AnimationClip.toJSON(anim))
 
 					editor.execute( new AddObjectCommand( object ) );
 
@@ -570,14 +578,11 @@ var Loader = function ( editor ) {
 
 		}
 
-		editor.animations = editor.animations.concat(data.animations || []);
+		if ('animations' in data)
+			editor.animations[result.uuid] = data.animations;
 
-		if ('animation' in data) {
-			// console.log('result.geometry', result.geometry);
-			editor.animations = editor.animations.concat(
-				result.geometry.animations.map(anim => THREE.AnimationClip.toJSON(anim))
-			);
-		}
+		if ('animation' in data)
+			editor.animations[result.uuid || result.geometry.uuid] = result.geometry.animations.map(anim => THREE.AnimationClip.toJSON(anim));
 
 		// console.log('editor.animations', editor.animations);
 

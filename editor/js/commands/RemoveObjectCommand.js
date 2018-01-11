@@ -39,6 +39,11 @@ RemoveObjectCommand.prototype = {
 		this.parent.remove( this.object );
 		this.editor.select( this.parent );
 
+		delete this.editor.animations[this.object.uuid];
+		
+		if (this.object.geometry)
+			delete this.editor.animations[this.object.geometry.uuid];
+
 		this.editor.signals.objectRemoved.dispatch( this.object );
 		this.editor.signals.sceneGraphChanged.dispatch();
 
