@@ -198,9 +198,11 @@ Editor.prototype = {
 		var scope = this;
 
 		delete this.animations[object.uuid];
-		
-		if (object.geometry)
+
+		if (object.geometry) {
 			delete this.animations[object.geometry.uuid];
+			delete this.geometryData[object.geometry.uuid];
+		}
 
 		object.traverse( function ( child ) {
 
@@ -523,7 +525,6 @@ Editor.prototype = {
 
 		var sceneJson = this.scene.toJSON();
 
-
 		// Keyframed animatiom
 		if (Object.values(this.animations).length > 0)
 			sceneJson.animations = [].concat(...Object.values(this.animations));
@@ -534,8 +535,10 @@ Editor.prototype = {
 
 		if ('geometries' in sceneJson) {
 			sceneJson.geometries.forEach(geometry => {
-				if (geometry.uuid in this.geometryData)
-					geometry.data = Object.assign(geometry.data, this.geometryData[geometry.uuid]);
+				if (geometry.uuid in this.geometryData) {
+					const data = this.geometryData[geometry.uuid];
+					geometry.data = Object.assign({}, geometry.data, clone(data));
+				}
 			});
 		}
 

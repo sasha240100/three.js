@@ -138,12 +138,16 @@ Menubar.File = function ( editor ) {
 		}
 
 		var output = object.toJSON();
-		output.animations = editor.animations;
+
+		if (Object.values(editor.animations).length > 0)
+			output.animations = [].concat(...Object.values(editor.animations));
 
 		if ('geometries' in output) {
 			output.geometries.forEach(geometry => {
-				if (geometry.uuid in editor.geometryData)
-					geometry.data = Object.assign(geometry.data, editor.geometryData[geometry.uuid]);
+				if (geometry.uuid in editor.geometryData) {
+					const data = editor.geometryData[geometry.uuid];
+					geometry.data = Object.assign({}, geometry.data, clone(data));
+				}
 			});
 		}
 
@@ -171,12 +175,16 @@ Menubar.File = function ( editor ) {
 	option.onClick( function () {
 
 		var output = editor.scene.toJSON();
-		output.animations = editor.animations;
+
+		if (Object.values(editor.animations).length > 0)
+			output.animations = [].concat(...Object.values(editor.animations));
 
 		if ('geometries' in output) {
 			output.geometries.forEach(geometry => {
-				if (geometry.uuid in editor.geometryData)
-					geometry.data = Object.assign(geometry.data, editor.geometryData[geometry.uuid]);
+				if (geometry.uuid in editor.geometryData) {
+					const data = editor.geometryData[geometry.uuid];
+					geometry.data = Object.assign({}, geometry.data, clone(data));
+				}
 			});
 		}
 

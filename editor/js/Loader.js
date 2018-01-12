@@ -167,8 +167,14 @@ var Loader = function ( editor ) {
 					// 	object.animations ? object.animations.map(anim => THREE.AnimationClip.toJSON(anim)) : []
 					// );
 
-					if (object.animations)
-						editor.animations[object.uuid] = object.animations.map(anim => THREE.AnimationClip.toJSON(anim))
+					if (object.animations) {
+						editor.animations[object.uuid] = object.animations.map(clip => Object.assign(
+							THREE.AnimationClip.toJSON(clip),
+							{
+								object: object.uuid
+							}
+						));
+					}
 
 					editor.execute( new AddObjectCommand( object ) );
 
@@ -469,6 +475,81 @@ var Loader = function ( editor ) {
 
 	};
 
+	function syncGeometry(geometry, data) {
+		const geometryData = editor.geometryData[geometry.uuid] = {};
+
+		function fill(geom, geomData) {
+			if (!geomData) return;
+			
+			// morphTargets
+			if (geom.morphTargets && geom.morphTargets.length >= 1) {
+				geometryData.morphTargets = clone(geomData.morphTargets);
+
+				// scale
+				if (geomData.scale) {
+					geometryData.morphTargets.forEach((morphTarget) => {
+						morphTarget.vertices = morphTarget.vertices.map(v => v * geomData.scale);
+					});
+
+					delete geomData.scale;
+				}
+			}
+
+			// morphColors
+			if (geomData.morphColors)
+				geometryData.morphColors = clone(geomData.morphColors);
+
+			// bones
+			if (geom.bones && geom.bones.length >= 1)
+				geometryData.bones = clone(geomData.bones);
+
+			// skinIndices
+			if (geom.skinIndices && geom.skinIndices.length >= 1)
+				geometryData.skinIndices = clone(geomData.skinIndices);
+
+			// skinWeights
+			if (geom.skinWeights && geom.skinWeights.length >= 1)
+				geometryData.skinWeights = clone(geomData.skinWeights);
+
+			// faceVertexUvs
+			if (geom.faceVertexUvs && geom.faceVertexUvs.length >= 1) {
+				geometryData.uvs = clone(geomData.uvs);
+				// Copy other data because it depends
+				geometryData.faces = clone(geomData.faces);
+				geometryData.normals = clone(geomData.normals);
+			}
+		}
+
+		switch (data.metadata.type.toLowerCase()) {
+			case 'geometry':
+				fill(geometry, data);
+				break;
+			case 'object':
+				fill(geometry, data.geometries.find(geom => geom.uuid === geometry.uuid).data);
+				break;
+			default:
+				break;
+		}
+	}
+
+	function handleGeometries(result, data) {
+		console.log('data', data);
+		console.log('result', result);
+
+		if (result) {
+			if (result.geometry)
+				syncGeometry(result.geometry, data);
+			else if (result instanceof THREE.Object3D) {
+				result.traverse((child) => {
+					console.log(data);
+					child.geometry && syncGeometry(
+						child.geometry, data
+					)
+				});
+			}
+		}
+	}
+
 	function handleJSON( data, file, filename ) { // @WORK
 
 		if ( data.metadata === undefined ) { // 2.0
@@ -497,6 +578,8 @@ var Loader = function ( editor ) {
 				var result = loader.parse( data );
 
 				var mesh = new THREE.Mesh( result );
+
+				handleGeometries(result, data);
 
 				editor.execute( new AddObjectCommand( mesh ) );
 
@@ -547,6 +630,8 @@ var Loader = function ( editor ) {
 
 				mesh.name = filename;
 
+				handleGeometries(result, data);
+
 				editor.execute( new AddObjectCommand( mesh ) );
 
 				break;
@@ -557,6 +642,8 @@ var Loader = function ( editor ) {
 				loader.setTexturePath( scope.texturePath );
 
 				var result = loader.parse( data );
+
+				handleGeometries(result, data);
 
 				if ( result instanceof THREE.Scene ) {
 
@@ -578,58 +665,31 @@ var Loader = function ( editor ) {
 
 		}
 
-		if ('animations' in data)
-			editor.animations[result.uuid] = data.animations;
+		if ('animations' in data) {
+			const animations = data.animations.map(clip => Object.assign(
+				clip,
+				{
+					object: clip.object || result.uuid
+				}
+			));
 
-		if ('animation' in data)
-			editor.animations[result.uuid || result.geometry.uuid] = result.geometry.animations.map(anim => THREE.AnimationClip.toJSON(anim));
-
-		// console.log('editor.animations', editor.animations);
-
-		function syncGeometry(geometry) {
-			const geometryData = editor.geometryData[geometry.uuid] = {};
-
-			switch (data.metadata.type.toLowerCase()) {
-				case 'geometry':
-					// morphTargets
-					if (geometry.morphTargets && geometry.morphTargets.length >= 1)
-						geometryData.morphTargets = clone(data.morphTargets);
-
-					// bones
-					if (geometry.bones && geometry.bones.length >= 1)
-						geometryData.bones = clone(data.bones);
-
-					// skinIndices
-					if (geometry.skinIndices && geometry.skinIndices.length >= 1)
-						geometryData.skinIndices = clone(data.skinIndices);
-
-					// skinWeights
-					if (geometry.skinWeights && geometry.skinWeights.length >= 1)
-						geometryData.skinWeights = clone(data.skinWeights);
-
-					// faceVertexUvs
-					if (geometry.faceVertexUvs && geometry.faceVertexUvs.length >= 1) {
-						geometryData.uvs = clone(data.uvs);
-						// Copy other data because it depends
-						geometryData.faces = clone(data.faces);
-						geometryData.normals = clone(data.normals);
-					}
-					break;
-				default:
-					break;
-			}
+			animations.forEach(anim => {
+				if (editor.animations[anim.object])
+					editor.animations[anim.object].push(anim);
+				else
+					editor.animations[anim.object] = [anim];
+			});
 		}
 
-		console.log('data', data);
-		console.log('result', result);
-
-		if (result) {
-			if (result.geometry)
-				syncGeometry(result.geometry);
-			else if (result instanceof THREE.Object3D)
-				result.traverse((child) => syncGeometry(child));
+		if ('animation' in data) {
+			editor.animations[result.uuid || result.geometry.uuid] = result.geometry.animations.map(clip => Object.assign(
+				THREE.AnimationClip.toJSON(clip),
+				{
+					object: clip.object || result.uuid || result.geometry.uuid
+				}
+			));
 		}
-			// console.log('result', result);
+			// console.log('data', data);
 
 	}
 
