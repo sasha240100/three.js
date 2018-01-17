@@ -110,6 +110,7 @@ var APP = {
 			camera = value;
 			camera.aspect = this.width / this.height;
 			camera.updateProjectionMatrix();
+			this.camera = camera;
 
 			if ( renderer.vr.enabled ) {
 

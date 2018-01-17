@@ -48,7 +48,23 @@ var Player = function ( editor ) {
 	  return geometry;
 	}
 
+	var raycaster = new THREE.Raycaster();
+	var mouse = new THREE.Vector2();
+
+	window.addEventListener( 'mousemove', function ( event ) {
+
+		var rect = player.dom.getBoundingClientRect();
+
+		mouse.x = ( (event.clientX - rect.left) / player.dom.clientWidth ) * 2 - 1;
+		mouse.y = - ( (event.clientY - rect.top) / player.dom.clientHeight ) * 2 + 1;
+
+	}, false );
+
+	var listeners = [];
+
 	signals.startPlayer.add( function () {
+
+		listeners = [];
 
 		container.setDisplay( '' );
 
@@ -57,69 +73,159 @@ var Player = function ( editor ) {
 		player.play();
 
 		const scene = player.scene;
+		const camera = player.camera;
+		// console.log('player', player);
 
 		var mixer = new THREE.AnimationMixer();
 
     // @WORK AUTO
 		scene.traverse(object => {
-			const clipObject = (
-				object
-				&& object.animations
-				&& object.animations[0]
-			) || (
-				object
-				&& object.geometry
-				&& object.geometry.animations
-				&& object.geometry.animations[0]
-			) || (() => {
-				const name = (
-					object.uuid in editor.animations
-					&& editor.animations[object.uuid][0].name
-			  ) || (
-					object.geometry
-					&& (object.geometry.uuid in editor.animations)
-					&& editor.animations[object.geometry.uuid][0].name
-				);
-
-				return scene.animations
-					? scene.animations.find(clip => clip.name === name)
-					: false;
-			})();
-
-			console.log('scene', scene);
-			console.log('clipObject', clipObject);
-
 			if (
 				object.userData
-				&& 'animationScale' in object.userData
-				&& object.geometry
-				&& clipObject
+				&& object.userData.__editor
+				&& object.userData.__editor.animations
 			) {
-				object.geometry = scaleWithAnimation(
-					object,
-					object.geometry,
-					object.userData.animationScale,
-					clipObject
-				);
-			}
 
-			const action = clipObject && mixer.clipAction(clipObject, object);
+				Object.entries(object.userData.__editor.animations).forEach(data => {
+					const clipObject = (
+						object
+						&& object.animations
+						&& object.animations.find(clip => clip.name === data[0])
+					) || (
+						object
+						&& object.geometry
+						&& object.geometry.animations
+						&& object.geometry.animations.find(clip => clip.name === data[0])
+					) || (
+						scene
+						&& scene.animations
+						&& scene.animations.find(clip => clip.name === data[0])
+					);
 
-			if (object && object.geometry && object.geometry.skeleton)
-				object.skeleton = object.geometry.skeleton;
+					const action = clipObject && mixer.clipAction(clipObject, object);
 
-			if (action && object !== scene) {
-				if (object.material) {
-					object.material.morphTargets = true;
-					object.material.skinning = true;
+					switch (data[1].trigger) { // Triggerer
+						case 'autostart':
+							if (object.material) {
+
+								object.material.morphTargets = true;
+								object.material.skinning = true;
+
+							}
+
+							action.play();
+							break;
+						case 'click':
+
+							if (object.material) {
+
+								object.material.morphTargets = true;
+								object.material.skinning = true;
+
+							}
+
+							function handleClickTouch() {
+
+								raycaster.setFromCamera( mouse, camera );
+
+								var objects = [];
+
+								object.traverse( function (obj) {
+
+									objects.push(obj);
+
+								} )
+
+								var intersects = raycaster.intersectObjects( objects );
+								console.log('intersects', intersects);
+								// console.log('mx', mouse.x, 'my', mouse.y);
+
+								if (intersects[0]) {
+
+									action.play();
+
+								}
+
+							}
+
+							window.addEventListener( 'click', handleClickTouch );
+
+							listeners.push( [ handleClickTouch, "click" ] );
+
+							break;
+
+						case 'none':
+							// action.play();
+							break;
+						default:
+
+					}
+				});
+
+			} else {
+
+				const clipObject = (
+					object
+					&& object.animations
+					&& object.animations[0]
+				) || (
+					object
+					&& object.geometry
+					&& object.geometry.animations
+					&& object.geometry.animations[0]
+				) || (() => {
+					const name = (
+						object.uuid in editor.animations
+						&& editor.animations[object.uuid][0].name
+				  ) || (
+						object.geometry
+						&& (object.geometry.uuid in editor.animations)
+						&& editor.animations[object.geometry.uuid][0].name
+					);
+
+					return scene.animations
+						? scene.animations.find(clip => clip.name === name)
+						: false;
+				})();
+
+				// console.log('scene', scene);
+				// console.log('clipObject', clipObject);
+
+				if (
+					object.userData
+					&& 'animationScale' in object.userData
+					&& object.geometry
+					&& clipObject
+				) {
+					object.geometry = scaleWithAnimation(
+						object,
+						object.geometry,
+						object.userData.animationScale,
+						clipObject
+					);
 				}
 
-				console.log('test', object);
-				console.log('action', action);
+				const action = clipObject && mixer.clipAction(clipObject, object);
 
-				action.play();
+				if (object && object.geometry && object.geometry.skeleton)
+					object.skeleton = object.geometry.skeleton;
+
+				if (action && object !== scene) {
+
+					if (object.material) {
+						object.material.morphTargets = true;
+						object.material.skinning = true;
+					}
+
+					// console.log('test', object);
+					// console.log('action', action);
+
+					action.play();
+
+				}
+
 			}
-		})
+		});
 
 		function upd() {
 			requestAnimationFrame(upd);
@@ -136,6 +242,12 @@ var Player = function ( editor ) {
 
 		player.stop();
 		player.dispose();
+
+		listeners.forEach( function ( listener ) {
+
+			window.removeEventListener( listener[1], listener[0] );
+
+		} )
 
 	} );
 

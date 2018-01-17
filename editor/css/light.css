@@ -48,7 +48,7 @@ select {
 	position: absolute;
 	top: 32px;
 	left: 0;
-	right: 300px;
+	right: 380px;
 	bottom: 32px;
 }
 
@@ -70,7 +70,7 @@ select {
 	position: absolute;
 	top: 32px;
 	left: 0;
-	right: 300px;
+	right: 380px;
 	bottom: 32px;
 }
 
@@ -152,7 +152,7 @@ select {
 	right: 0;
 	top: 32px;
 	bottom: 0;
-	width: 300px;
+	width: 380px;
 	background: #eee;
 	overflow: auto;
 }
