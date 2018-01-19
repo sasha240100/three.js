@@ -69,12 +69,12 @@ Sidebar.Animations = function ( editor ) {
 	triggererRow.setDisplay( 'none' );
 	var triggerer = new UI.Select().setOptions( {
 
-		'None': 'None',
-		'Autostart': 'Autostart',
-		'Click': 'Click / Touch',
-		'Button': 'Button'
+		'none': 'None',
+		'autostart': 'Autostart',
+		'click': 'Click / Touch',
+		'button': 'Button'
 
-	} ).setWidth( '150px' ).setFontSize( '12px' ).setValue( 'Autostart' ).onChange(
+	} ).setWidth( '150px' ).setFontSize( '12px' ).setValue( 'autostart' ).onChange(
 		function (e) {
 			if (!activeObject || !activeClip) return;
 
@@ -97,7 +97,21 @@ Sidebar.Animations = function ( editor ) {
 
 	var clipDurationRow = new UI.Row();
 	clipDurationRow.setDisplay( 'none' );
-	var clipDuration = new UI.Number().setWidth( '50px' ).setDisabled(true); //.onChange( update );
+	var clipDuration = new UI.Number().setWidth( '50px' ).onChange(
+		function (e) {
+			if (!activeObject || !activeClip) return;
+
+			_.merge(activeObject.userData, {
+				__editor: {
+					animations: {
+						[activeClip.name]: {
+							duration: +e.target.value.toLowerCase()
+						}
+					}
+				}
+			});
+		}
+	);
 
 	clipDurationRow.add( new UI.Text( 'Duration' ).setWidth( '90px' ) );
 	clipDurationRow.add( clipDuration );
@@ -106,7 +120,21 @@ Sidebar.Animations = function ( editor ) {
 
 	var loopRow = new UI.Row();
 	loopRow.setDisplay( 'none' );
-	var loop = new UI.Checkbox().setValue(false).setDisabled(true); //.onChange( update );
+	var loop = new UI.Checkbox().setValue(true).onChange(
+		function (e) {
+			if (!activeObject || !activeClip) return;
+
+			_.merge(activeObject.userData, {
+				__editor: {
+					animations: {
+						[activeClip.name]: {
+							loop: e.target.checked
+						}
+					}
+				}
+			});
+		}
+	);
 
 	loopRow.add( new UI.Text( 'Loop' ).setWidth( '90px' ) );
 	loopRow.add( loop );
@@ -124,6 +152,25 @@ Sidebar.Animations = function ( editor ) {
 		clipDuration.setValue( clip.duration );
 		clipDurationRow.setDisplay( '' );
 		loopRow.setDisplay( '' );
+
+		if (
+			activeObject
+			&& activeObject.userData
+			&& activeObject.userData.__editor
+			&& activeObject.userData.__editor.animations
+			&& activeObject.userData.__editor.animations[activeClip.name]
+		) {
+			const data = activeObject.userData.__editor.animations[activeClip.name];
+
+			if (data.trigger)
+				triggerer.setValue(data.trigger);
+
+			if (data.duration)
+				clipDuration.setValue(data.duration);
+
+			if (typeof data.loop === 'boolean')
+				loop.setValue(data.loop);
+		}
 	}
 
 	// objectSelected event

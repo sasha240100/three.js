@@ -104,7 +104,16 @@ var Player = function ( editor ) {
 
 					const action = clipObject && mixer.clipAction(clipObject, object);
 
-					switch (data[1].trigger) { // Triggerer
+					// Duration
+					if (data[1].duration)
+						action.setDuration(data[1].duration);
+
+					// Duration
+					if (typeof data[1].loop === 'boolean')
+						action.setLoop(data[1].loop ? THREE.LoopRepeat : THREE.LoopOnce);
+
+					// Triggerer
+					switch (data[1].trigger) {
 						case 'autostart':
 							if (object.material) {
 
@@ -142,7 +151,7 @@ var Player = function ( editor ) {
 
 								if (intersects[0]) {
 
-									action.play();
+									action.play().reset();
 
 								}
 
