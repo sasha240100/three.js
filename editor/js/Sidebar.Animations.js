@@ -5,7 +5,7 @@
 Sidebar.Animations = function ( editor ) {
 
 	var signals = editor.signals;
-	var activeObject, activeClip;
+	var activeObject, activeClip, activeClipName;
 
 	var container = new UI.Panel();
 	container.setBorderTop( '0' );
@@ -14,20 +14,27 @@ Sidebar.Animations = function ( editor ) {
 
 	// outliner
 
-	function buildOption( clip, draggable ) {
+	function buildOption( clip, aliasName, aliasData ) {
 
 		var option = document.createElement( 'div' );
-		option.draggable = draggable;
-		option.innerHTML = buildHTML( clip );
-		option.value = clip;
+		option.draggable = false;
+		option.innerHTML = buildHTML( clip, aliasName );
+		option.value = aliasName ? {
+			clip,
+			aliasName,
+			aliasData
+		} : clip;
 
 		return option;
 
 	}
 
-	function buildHTML( clip ) {
+	function buildHTML( clip, aliasName ) {
 
-		var html = '<span class="type clip"></span> ' + clip.name;
+		var html = '<span class="type clip"></span> ' + (aliasName || clip.name);
+
+		if (aliasName)
+			html += ' <span class="type alias"></span> ' + clip.name;
 
 		return html;
 
@@ -46,7 +53,19 @@ Sidebar.Animations = function ( editor ) {
 	} );
 
 	function updateOutliner( object ) {
-		var animations = object.animations || (object.geometry && object.geometry.animations);
+		var animations = object.animations
+			|| (
+				object.geometry
+				&& object.geometry.animations
+			) || (
+				editor.animations
+				&& editor.animations[ object.uuid ]
+			) || (
+				editor.animations
+				&& object.geometry
+				&& editor.animations[ object.geometry.uuid ]
+			);
+
 		var options = [];
 
 		outliner.setOptions([]);
@@ -56,7 +75,19 @@ Sidebar.Animations = function ( editor ) {
 		container.setDisplay( '' );
 
 		animations.forEach(clip => {
-			options.push( buildOption( clip, false ) );
+			options.push( buildOption( clip ) );
+
+			if (
+				object.userData
+				&& object.userData.__editor
+				&& object.userData.__editor.animations
+			) {
+				Object.entries(object.userData.__editor.animations).forEach(([name, data]) => {
+					if (data.alias && data.alias === clip.name) {
+						options.push( buildOption( clip, name, data ) );
+					}
+				})
+			}
 		});
 		// console.log(animations);
 
@@ -81,7 +112,7 @@ Sidebar.Animations = function ( editor ) {
 			_.merge(activeObject.userData, {
 				__editor: {
 					animations: {
-						[activeClip.name]: {
+						[activeClipName]: {
 							trigger: e.target.value.toLowerCase()
 						}
 					}
@@ -104,7 +135,7 @@ Sidebar.Animations = function ( editor ) {
 			_.merge(activeObject.userData, {
 				__editor: {
 					animations: {
-						[activeClip.name]: {
+						[activeClipName]: {
 							duration: +e.target.value.toLowerCase()
 						}
 					}
@@ -127,7 +158,7 @@ Sidebar.Animations = function ( editor ) {
 			_.merge(activeObject.userData, {
 				__editor: {
 					animations: {
-						[activeClip.name]: {
+						[activeClipName]: {
 							loop: e.target.checked
 						}
 					}
@@ -139,28 +170,96 @@ Sidebar.Animations = function ( editor ) {
 	loopRow.add( new UI.Text( 'Loop' ).setWidth( '90px' ) );
 	loopRow.add( loop );
 
+	var aliasRow = new UI.Row();
+	aliasRow.setDisplay( 'none' );
+
+	var aliasName = new UI.Input().setWidth( '102px' ).setFontSize( '12px' ).setValue( '' );
+
+	var alias = new UI.Button( 'Make alias' ).setMarginLeft( '7px' ).onClick(
+		function () {
+			if (!activeObject || !activeClip) return;
+
+			_.merge(activeObject.userData, {
+				__editor: {
+					animations: {
+						[aliasName.getValue()]: {
+							alias: activeClip.name
+						}
+					}
+				}
+			});
+
+			updateOutliner(activeObject);
+		}
+  );
+
+	aliasRow.add( aliasName );
+	aliasRow.add( alias );
+
+	var aliasRemoveRow = new UI.Row();
+	aliasRemoveRow.setDisplay( 'none' );
+
+	var aliasRemove = new UI.Button( 'Remove' ).onClick(
+		function () {
+			if (!activeObject || !activeClip || !activeClipName) return;
+
+			delete activeObject.userData.__editor.animations[ activeClipName ];
+
+			activeClipName = activeClip.name;
+			updateOutliner(activeObject);
+			updateUI(activeClip);
+		}
+  );
+
+	aliasRemoveRow.add( aliasRemove );
+
+	// var clipTrimRow = new UI.Row();
+	// clipTrimRow.setDisplay( 'none' );
+	// var clipTrimStart = new UI.Number().setWidth( '50px' ).setValue(0).onChange(
+	// 	function (e) {
+	// 		if (!activeObject || !activeClip) return;
+  //
+	// 		_.merge(activeObject.userData, {
+	// 			__editor: {
+	// 				animations: {
+	// 					[activeClipName]: {
+	// 						trimStart: +e.target.value.toLowerCase()
+	// 					}
+	// 				}
+	// 			}
+	// 		});
+	// 	}
+	// );
+
 	function updateUI(clip = null) {
 		triggererRow.setDisplay( 'none' );
 		clipDurationRow.setDisplay( 'none' );
 		loopRow.setDisplay( 'none' );
-
-		activeClip = clip;
+		aliasRow.setDisplay( 'none' );
+		aliasRemoveRow.setDisplay( 'none' );
 
 		if (!clip) return;
+
+		activeClip = clip.aliasName ? clip.clip : clip;
+		activeClipName = clip.aliasName || clip.name;
 
 		triggererRow.setDisplay( '' );
 		clipDuration.setValue( clip.duration );
 		clipDurationRow.setDisplay( '' );
 		loopRow.setDisplay( '' );
+		aliasRow.setDisplay( '' );
+
+		if (clip.aliasName)
+			aliasRemoveRow.setDisplay( '' );
 
 		if (
 			activeObject
 			&& activeObject.userData
 			&& activeObject.userData.__editor
 			&& activeObject.userData.__editor.animations
-			&& activeObject.userData.__editor.animations[activeClip.name]
+			&& activeObject.userData.__editor.animations[activeClipName]
 		) {
-			const data = activeObject.userData.__editor.animations[activeClip.name];
+			const data = activeObject.userData.__editor.animations[activeClipName];
 
 			if (data.trigger)
 				triggerer.setValue(data.trigger);
@@ -183,12 +282,15 @@ Sidebar.Animations = function ( editor ) {
 
 			container.setDisplay( 'block' );
 
+			console.log('objectSelected', object);
+
 			updateUI();
 			updateOutliner( object );
 
 		} else {
 
 			activeClip = null;
+			activeClipName = null;
 			container.setDisplay( 'none' );
 
 		}
@@ -200,6 +302,8 @@ Sidebar.Animations = function ( editor ) {
 	container.add( triggererRow );
 	container.add( clipDurationRow );
 	container.add( loopRow );
+	container.add( aliasRow );
+	container.add( aliasRemoveRow );
 
 	return container;
 

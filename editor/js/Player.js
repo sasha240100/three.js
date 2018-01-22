@@ -86,21 +86,29 @@ var Player = function ( editor ) {
 				&& object.userData.__editor.animations
 			) {
 
+				console.log('test', object);
+
 				Object.entries(object.userData.__editor.animations).forEach(data => {
-					const clipObject = (
+					const name = data[1].alias || data[0];
+
+					let clipObject = (
 						object
 						&& object.animations
-						&& object.animations.find(clip => clip.name === data[0])
+						&& object.animations.find(clip => clip.name === name)
 					) || (
 						object
 						&& object.geometry
 						&& object.geometry.animations
-						&& object.geometry.animations.find(clip => clip.name === data[0])
+						&& object.geometry.animations.find(clip => clip.name === name)
 					) || (
 						scene
 						&& scene.animations
-						&& scene.animations.find(clip => clip.name === data[0])
+						&& scene.animations.find(clip => clip.name === name)
 					);
+
+					if (data[1].alias) {
+						clipObject = THREE.AnimationClip.parse(THREE.AnimationClip.toJSON(clipObject));
+					}
 
 					const action = clipObject && mixer.clipAction(clipObject, object);
 
@@ -108,9 +116,11 @@ var Player = function ( editor ) {
 					if (data[1].duration)
 						action.setDuration(data[1].duration);
 
-					// Duration
+					// Loop
 					if (typeof data[1].loop === 'boolean')
 						action.setLoop(data[1].loop ? THREE.LoopRepeat : THREE.LoopOnce);
+
+					action.clampWhenFinished = true;
 
 					// Triggerer
 					switch (data[1].trigger) {
@@ -167,7 +177,14 @@ var Player = function ( editor ) {
 							// action.play();
 							break;
 						default:
+							if (object.material) {
 
+								object.material.morphTargets = true;
+								object.material.skinning = true;
+
+							}
+
+							action.play();
 					}
 				});
 
@@ -239,6 +256,10 @@ var Player = function ( editor ) {
 		function upd() {
 			requestAnimationFrame(upd);
 			mixer.update(1/60);
+
+			for (let i = 0; i < mixer._actions.length; i++) {
+				const action = mixer._actions[i];
+			}
 		}
 
 		upd();

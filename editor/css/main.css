@@ -91,14 +91,14 @@ textarea, input { outline: none; } /* osx */
 
 }
 
-#outliner .type {
+#outliner .type, #outliner-animation .type {
 	position:relative;
 	top:-2px;
 	padding: 0 2px;
 	color: #ddd;
 }
 
-#outliner .type:after {
+#outliner .type:after, #outliner-animation .type:after {
 	content: '■';
 }
 
@@ -154,6 +154,10 @@ textarea, input { outline: none; } /* osx */
 
 #outliner .MeshPhongMaterial {
 	color: #ffaa88;
+}
+
+#outliner-animation .alias {
+	color: #ff0000;
 }
 
 /* */
