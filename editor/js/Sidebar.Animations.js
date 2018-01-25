@@ -317,7 +317,7 @@ Sidebar.Animations = function ( editor ) {
 
 		triggererRow.setDisplay( '' );
 		clipDuration.setValue( clip.duration );
-		clipEndTrim.setValue( clip.duration );
+		clipEndTrim.setValue( 0 );
 		clipDurationRow.setDisplay( '' );
 		loopRow.setDisplay( '' );
 		aliasRow.setDisplay( '' );
@@ -337,22 +337,33 @@ Sidebar.Animations = function ( editor ) {
 		) {
 			const data = activeObject.userData.__editor.animations[activeClipName];
 
+			console.log('activeClipName', activeClipName);
+			console.log('data.endTrim', data.endTrim);
+
 			if (data.trigger)
-				triggerer.setValue(data.trigger);
+				triggerer.setValue( data.trigger );
 			else
 				triggerer.setValue( 'autostart' );
 
 			if (data.duration)
-				clipDuration.setValue(data.duration);
+				clipDuration.setValue( data.duration );
+			else
+				clipDuration.setValue( activeClip.duration );
 
 			if (data.startTrim)
-				clipStartTrim.setValue(data.startTrim)
+				clipStartTrim.setValue( data.startTrim );
+			else
+				clipStartTrim.setValue( 0 );
 
 			if (data.endTrim)
-				clipEndTrim.setValue(data.endTrim)
+				clipEndTrim.setValue( data.endTrim );
+			else
+				clipEndTrim.setValue( 0 );
 
 			if (data.fps)
-				clipFPS.setValue(data.fps)
+				clipFPS.setValue( data.fps );
+			else
+				clipFPS.setValue( 30 );
 
 			if (typeof data.loop === 'boolean')
 				loop.setValue(data.loop);
