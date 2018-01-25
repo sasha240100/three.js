@@ -147,7 +147,7 @@ Sidebar.Animations = function ( editor ) {
 	clipDurationRow.add( new UI.Text( 'Duration' ).setWidth( '90px' ) );
 	clipDurationRow.add( clipDuration );
 
-	// clipDurationRow
+	// loopRow
 
 	var loopRow = new UI.Row();
 	loopRow.setDisplay( 'none' );
@@ -170,6 +170,66 @@ Sidebar.Animations = function ( editor ) {
 	loopRow.add( new UI.Text( 'Loop' ).setWidth( '90px' ) );
 	loopRow.add( loop );
 
+	// clipTrimRow
+
+	var clipTrimRow = new UI.Row();
+	clipTrimRow.setDisplay( 'none' );
+	var clipStartTrim = new UI.Number().setPrecision(0).setValue(0).setWidth( '50px' ).onChange(
+		function (e) {
+			if (!activeObject || !activeClip) return;
+
+			_.merge(activeObject.userData, {
+				__editor: {
+					animations: {
+						[activeClipName]: {
+							startTrim: +Number(e.target.value).toFixed()
+						}
+					}
+				}
+			});
+		}
+	);
+
+	var clipEndTrim = new UI.Number().setPrecision(0).setWidth( '50px' ).onChange(
+		function (e) {
+			if (!activeObject || !activeClip) return;
+
+			_.merge(activeObject.userData, {
+				__editor: {
+					animations: {
+						[activeClipName]: {
+							endTrim: +Number(e.target.value).toFixed()
+						}
+					}
+				}
+			});
+		}
+	);
+
+	var clipFPS = new UI.Number().setPrecision(1).setValue(30).setWidth( '50px' ).onChange(
+		function (e) {
+			if (!activeObject || !activeClip) return;
+
+			_.merge(activeObject.userData, {
+				__editor: {
+					animations: {
+						[activeClipName]: {
+							fps: +Number(e.target.value).toFixed()
+						}
+					}
+				}
+			});
+		}
+	);
+
+	clipTrimRow.add( new UI.Text( 'Trim:' ).setWidth( '60px' ) );
+	clipTrimRow.add( new UI.Text( 'start' ).setWidth( '30px' ) );
+	clipTrimRow.add( clipStartTrim );
+	clipTrimRow.add( new UI.Text( 'end' ).setWidth( '30px' ) );
+	clipTrimRow.add( clipEndTrim );
+	clipTrimRow.add( new UI.Text( 'fps' ).setWidth( '30px' ) );
+	clipTrimRow.add( clipFPS );
+
 	var aliasRow = new UI.Row();
 	aliasRow.setDisplay( 'none' );
 
@@ -179,12 +239,23 @@ Sidebar.Animations = function ( editor ) {
 		function () {
 			if (!activeObject || !activeClip) return;
 
+			if (aliasName.getValue() === "") {
+				alert("Alias name can't be empty.");
+				return;
+			}
+
 			_.merge(activeObject.userData, {
 				__editor: {
 					animations: {
-						[aliasName.getValue()]: {
-							alias: activeClip.name
-						}
+						[aliasName.getValue()]: Object.assign({
+							alias: activeClip.name,
+							duration: activeClip.duration
+						}, (
+							activeObject.userData
+							&& activeObject.userData.__editor
+							&& activeObject.userData.__editor.animations
+							&& activeObject.userData.__editor.animations[activeClip.name]
+						))
 					}
 				}
 			});
@@ -235,6 +306,7 @@ Sidebar.Animations = function ( editor ) {
 		triggererRow.setDisplay( 'none' );
 		clipDurationRow.setDisplay( 'none' );
 		loopRow.setDisplay( 'none' );
+		clipTrimRow.setDisplay( 'none' );
 		aliasRow.setDisplay( 'none' );
 		aliasRemoveRow.setDisplay( 'none' );
 
@@ -245,12 +317,16 @@ Sidebar.Animations = function ( editor ) {
 
 		triggererRow.setDisplay( '' );
 		clipDuration.setValue( clip.duration );
+		clipEndTrim.setValue( clip.duration );
 		clipDurationRow.setDisplay( '' );
 		loopRow.setDisplay( '' );
 		aliasRow.setDisplay( '' );
 
-		if (clip.aliasName)
+		if (clip.aliasName) {
 			aliasRemoveRow.setDisplay( '' );
+			clipTrimRow.setDisplay( '' );
+			// clipStartTrim.
+		}
 
 		if (
 			activeObject
@@ -263,9 +339,20 @@ Sidebar.Animations = function ( editor ) {
 
 			if (data.trigger)
 				triggerer.setValue(data.trigger);
+			else
+				triggerer.setValue( 'autostart' );
 
 			if (data.duration)
 				clipDuration.setValue(data.duration);
+
+			if (data.startTrim)
+				clipStartTrim.setValue(data.startTrim)
+
+			if (data.endTrim)
+				clipEndTrim.setValue(data.endTrim)
+
+			if (data.fps)
+				clipFPS.setValue(data.fps)
 
 			if (typeof data.loop === 'boolean')
 				loop.setValue(data.loop);
@@ -302,6 +389,7 @@ Sidebar.Animations = function ( editor ) {
 	container.add( triggererRow );
 	container.add( clipDurationRow );
 	container.add( loopRow );
+	container.add( clipTrimRow );
 	container.add( aliasRow );
 	container.add( aliasRemoveRow );
 

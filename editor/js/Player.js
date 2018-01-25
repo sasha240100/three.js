@@ -86,7 +86,7 @@ var Player = function ( editor ) {
 				&& object.userData.__editor.animations
 			) {
 
-				console.log('test', object);
+				// console.log('test', object);
 
 				Object.entries(object.userData.__editor.animations).forEach(data => {
 					const name = data[1].alias || data[0];
@@ -106,8 +106,31 @@ var Player = function ( editor ) {
 						&& scene.animations.find(clip => clip.name === name)
 					);
 
+					const FPS = +data[1].fps || 30;
+
 					if (data[1].alias) {
 						clipObject = THREE.AnimationClip.parse(THREE.AnimationClip.toJSON(clipObject));
+
+						if (data[1].startTrim || data[1].endTrim) {
+							const startTime = (data[1].startTrim || 0) / FPS;
+
+							clipObject.tracks.forEach(track => {
+								track.trim(
+									startTime,
+									data[1].endTrim ? data[1].endTrim / FPS : Infinity
+								);
+
+								track.shift(-startTime);
+							});
+
+							clipObject.trim(); //.resetDuration();
+
+							if (data[1].endTrim)
+								clipObject.duration = data[1].endTrim / FPS;
+
+							if (data[1].startTrim)
+								clipObject.duration -= data[1].startTrim / FPS;
+						}
 					}
 
 					const action = clipObject && mixer.clipAction(clipObject, object);
