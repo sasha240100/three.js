@@ -151,7 +151,7 @@ Sidebar.Animations = function ( editor ) {
 
 	var loopRow = new UI.Row();
 	loopRow.setDisplay( 'none' );
-	var loop = new UI.Checkbox().setValue(true).onChange(
+	var loop = new UI.Checkbox().setValue(false).onChange(
 		function (e) {
 			if (!activeObject || !activeClip) return;
 
