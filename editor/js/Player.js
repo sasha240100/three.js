@@ -76,10 +76,10 @@ var Player = function ( editor ) {
 		const camera = player.camera;
 		// console.log('player', player);
 
-		var mixer = new THREE.AnimationMixer();
-
     // @WORK AUTO
 		scene.traverse(object => {
+			var mixer = new THREE.AnimationMixer(), mixerHasAnimation = false;
+
 			if (
 				object.userData
 				&& object.userData.__editor
@@ -225,9 +225,14 @@ var Player = function ( editor ) {
 
 							}
 
+							mixerHasAnimation = true;
+
+							mixer.stopAllAction();
 							action.play();
 							break;
 						case 'click':
+
+							mixerHasAnimation = true;
 
 							if (object.material) {
 
@@ -254,6 +259,7 @@ var Player = function ( editor ) {
 
 								if (intersects[0]) {
 
+									mixer.stopAllAction();
 									action.play().reset();
 
 								}
@@ -277,6 +283,9 @@ var Player = function ( editor ) {
 
 							}
 
+							mixerHasAnimation = true;
+
+							mixer.stopAllAction();
 							action.play();
 					}
 				});
@@ -344,18 +353,18 @@ var Player = function ( editor ) {
 				}
 
 			}
-		});
 
-		function upd() {
-			requestAnimationFrame(upd);
-			mixer.update(1/60);
+			function upd() {
+				requestAnimationFrame(upd);
+				mixer.update(1/60);
 
-			for (let i = 0; i < mixer._actions.length; i++) {
-				const action = mixer._actions[i];
+				for (let i = 0; i < mixer._actions.length; i++) {
+					const action = mixer._actions[i];
+				}
 			}
-		}
 
-		upd();
+			if (mixerHasAnimation) upd();
+		});
 
 	} );
 
