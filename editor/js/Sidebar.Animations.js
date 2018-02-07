@@ -341,6 +341,8 @@ Sidebar.Animations = function ( editor ) {
 
 		form.reset();
 
+		audioName.setValue( '' );
+
 		_.merge(activeObject.userData, {
 			__editor: {
 				animations: {
