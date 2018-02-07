@@ -2,6 +2,8 @@
  * @author mrdoob / http://mrdoob.com/
  */
 
+var context = new ( window.AudioContext || window.webkitAudioContext )();
+
 var Player = function ( editor ) {
 
 	var signals = editor.signals;
@@ -215,6 +217,25 @@ var Player = function ( editor ) {
 
 					action.clampWhenFinished = true;
 
+					function onPlay() {
+						if (data[1].audio) {
+							var source = window._source = context.createBufferSource();
+
+							context.decodeAudioData( data[1].audio, function ( audioBuffer ) {
+
+								var gainNode = new GainNode(context);
+
+								if (typeof data[1].audioVolume === 'number')
+									gainNode.gain.value = data[1].audioVolume;
+
+								source.buffer = audioBuffer;
+								source.connect(gainNode).connect(context.destination);
+								source.start();
+
+							} );
+						}
+					}
+
 					// Triggerer
 					switch (data[1].trigger) {
 						case 'autostart':
@@ -229,6 +250,7 @@ var Player = function ( editor ) {
 
 							mixer.stopAllAction();
 							action.play();
+							onPlay();
 							break;
 						case 'click':
 
@@ -261,6 +283,7 @@ var Player = function ( editor ) {
 
 									mixer.stopAllAction();
 									action.play().reset();
+									onPlay();
 
 								}
 
@@ -287,6 +310,7 @@ var Player = function ( editor ) {
 
 							mixer.stopAllAction();
 							action.play();
+							onPlay();
 					}
 				});
 
@@ -369,6 +393,8 @@ var Player = function ( editor ) {
 	} );
 
 	signals.stopPlayer.add( function () {
+
+		window._source.stop();
 
 		container.setDisplay( 'none' );
 

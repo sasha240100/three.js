@@ -95,6 +95,7 @@ var Editor = function () {
 	this.geometryData = {};
 	this.animations = [];
 	this.playAnimations = [];
+	this.audio = [];
 
 	this.selected = null;
 	this.helpers = {};

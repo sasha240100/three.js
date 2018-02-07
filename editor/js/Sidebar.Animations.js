@@ -284,6 +284,100 @@ Sidebar.Animations = function ( editor ) {
 
 	aliasRemoveRow.add( aliasRemove );
 
+	var audioRow = new UI.Row();
+
+	audioRow.add( new UI.Break() );
+	audioRow.add( new UI.Text( 'Audio' ).setWidth( '7px' ) );
+
+	var form = document.createElement( 'form' );
+	form.style.display = 'none';
+	document.body.appendChild( form );
+
+	var fileInput = document.createElement( 'input' );
+	fileInput.type = 'file';
+
+	// var context = new ( window.AudioContext || window.webkitAudioContext )();
+
+	var audioName = new UI.Text( '' ).setWidth( '90px');
+
+	fileInput.addEventListener( 'change', function ( event ) {
+
+		var reader = new FileReader();
+
+		var file = fileInput.files[ 0 ];
+
+		reader.readAsArrayBuffer(file)
+
+		reader.onload = (evt) => {
+
+			// editor.audio[file.name] = evt.target.result;
+
+			_.merge(activeObject.userData, {
+				__editor: {
+					animations: {
+						[activeClipName]: {
+							audio: evt.target.result,
+							audioName: file.name
+						}
+					}
+				}
+			});
+
+			audioName.setValue( file.name.slice(0, 30) + '...' );
+
+		};
+
+		form.reset();
+
+	} );
+
+	var audio = new UI.Button( 'Upload mp3' ).setMarginLeft( '60px' ).onClick( function () {
+
+		fileInput.click();
+
+	} );
+
+	var audioReset = new UI.Button( 'X' ).setMarginLeft( '10px' ).onClick( function () {
+
+		form.reset();
+
+		_.merge(activeObject.userData, {
+			__editor: {
+				animations: {
+					[activeClipName]: {
+						audio: false
+					}
+				}
+			}
+		});
+
+	} );
+
+	var audioVolume = new UI.Number().setPrecision(2).setValue(1).setRange(0, 1).setWidth( '50px' ).onChange(
+		function (e) {
+			if (!activeObject || !activeClip) return;
+
+			_.merge(activeObject.userData, {
+				__editor: {
+					animations: {
+						[activeClipName]: {
+							audioVolume: Number(e.target.value)
+						}
+					}
+				}
+			});
+		}
+	);
+
+	audioRow.add(audio);
+	audioRow.add(audioReset);
+	audioRow.add( new UI.Text( 'volume' ).setWidth( '30px' ).setMarginLeft( '30px' ) );
+	audioRow.add(audioVolume.setMarginLeft( '20px' ));
+
+	var audioNameRow = new UI.Row();
+
+	audioNameRow.add( audioName );
+
 	// var clipTrimRow = new UI.Row();
 	// clipTrimRow.setDisplay( 'none' );
 	// var clipTrimStart = new UI.Number().setWidth( '50px' ).setValue(0).onChange(
@@ -309,6 +403,8 @@ Sidebar.Animations = function ( editor ) {
 		clipTrimRow.setDisplay( 'none' );
 		aliasRow.setDisplay( 'none' );
 		aliasRemoveRow.setDisplay( 'none' );
+		audioRow.setDisplay( 'none' );
+		audioNameRow.setDisplay( 'none' );
 
 		if (!clip) return;
 
@@ -321,6 +417,9 @@ Sidebar.Animations = function ( editor ) {
 		clipDurationRow.setDisplay( '' );
 		loopRow.setDisplay( '' );
 		aliasRow.setDisplay( '' );
+		audioRow.setDisplay( '' );
+		audioNameRow.setDisplay( '' );
+		audioName.setValue( '' );
 
 		if (clip.aliasName) {
 			aliasRemoveRow.setDisplay( '' );
@@ -365,6 +464,9 @@ Sidebar.Animations = function ( editor ) {
 			else
 				clipFPS.setValue( 30 );
 
+			if (data.audioName)
+				audioName.setValue( data.audioName.slice(0, 30) + '...' );
+
 			if (typeof data.loop === 'boolean')
 				loop.setValue(data.loop);
 		}
@@ -403,6 +505,8 @@ Sidebar.Animations = function ( editor ) {
 	container.add( clipTrimRow );
 	container.add( aliasRow );
 	container.add( aliasRemoveRow );
+	container.add( audioRow );
+	container.add( audioNameRow );
 
 	return container;
 
