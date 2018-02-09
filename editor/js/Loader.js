@@ -480,7 +480,7 @@ var Loader = function ( editor ) {
 
 		function fill(geom, geomData) {
 			if (!geomData) return;
-			
+
 			// morphTargets
 			if (geom.morphTargets && geom.morphTargets.length >= 1) {
 				geometryData.morphTargets = clone(geomData.morphTargets);
@@ -688,6 +688,26 @@ var Loader = function ( editor ) {
 					object: clip.object || result.uuid || result.geometry.uuid
 				}
 			));
+		}
+
+		if ('object' in data) {
+			function traverse(obj) {
+				if (obj.userData
+					&& obj.userData.__editor
+					&& obj.userData.__editor.animations
+				) {
+					Object.values(obj.userData.__editor.animations).forEach(animation => {
+						if (animation.audio instanceof Array) {
+							animation.audio = new Uint8Array(animation.audio).buffer;
+						}
+					});
+				}
+
+				if (obj.children)
+					obj.children.forEach(child => traverse(child));
+			}
+
+			traverse(data.object);
 		}
 			// console.log('data', data);
 

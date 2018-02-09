@@ -1,0 +1,14 @@
+sudo: true
+
+language: node_js
+node_js:
+  - "7"
+
+install: true
+after_success: true
+
+deploy:
+  provider: surge
+  project: ./
+  domain: editorplatform-sdk.surge.sh
+  skip_cleanup: true

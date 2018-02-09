@@ -221,7 +221,10 @@ var Player = function ( editor ) {
 						if (data[1].audio) {
 							var source = window._source = context.createBufferSource();
 
-							context.decodeAudioData( data[1].audio, function ( audioBuffer ) {
+							console.log('ab', data[1].audio);
+							window.testBuff = data[1].audio;
+
+							context.decodeAudioData( data[1].audio.slice(), function ( audioBuffer ) {
 
 								var gainNode = new GainNode(context);
 
@@ -394,7 +397,7 @@ var Player = function ( editor ) {
 
 	signals.stopPlayer.add( function () {
 
-		window._source.stop();
+		if (window._source) window._source.stop();
 
 		container.setDisplay( 'none' );
 

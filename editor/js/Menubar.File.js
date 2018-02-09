@@ -187,6 +187,27 @@ Menubar.File = function ( editor ) {
 				}
 			});
 		}
+		// debugger;
+
+		if ('object' in output) {
+			function traverse(obj) {
+				if (obj.userData
+					&& obj.userData.__editor
+					&& obj.userData.__editor.animations
+				) {
+					Object.values(obj.userData.__editor.animations).forEach(animation => {
+						if (animation.audio) {
+							animation.audio = Array.prototype.slice.call(new Uint8Array(animation.audio));
+						}
+					});
+				}
+
+				if (obj.children)
+					obj.children.forEach(child => traverse(child));
+			}
+
+			traverse(output.object);
+		}
 
 		try {
 
