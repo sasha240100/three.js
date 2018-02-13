@@ -219,6 +219,7 @@ var Player = function ( editor ) {
 
 					function onPlay() {
 						if (data[1].audio) {
+							let delay = 0;
 							// var source = window._source = context.createBufferSource();
 
 							// create an AudioListener and add it to the camera
@@ -227,6 +228,9 @@ var Player = function ( editor ) {
 
 							if (typeof data[1].audioVolume === 'number')
 								listener.setMasterVolume(data[1].audioVolume);
+
+							if (typeof data[1].audioDelay === 'number')
+								delay = +data[1].audioDelay;
 
 							// create the PositionalAudio object (passing in the listener)
 							const sound = new THREE.PositionalAudio( listener );
@@ -238,7 +242,7 @@ var Player = function ( editor ) {
 							context.decodeAudioData(data[1].audio.slice(), function (audioBuffer) {
 								sound.setBuffer(audioBuffer);
 								sound.setRefDistance(20);
-								sound.play();
+								setTimeout(() => sound.play(), delay * 1000);
 							});
 
 							object.add(sound);

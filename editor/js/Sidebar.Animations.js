@@ -371,10 +371,30 @@ Sidebar.Animations = function ( editor ) {
 		}
 	);
 
+	var audioDelay = new UI.Number().setPrecision(2).setValue(0).setWidth( '50px' ).onChange(
+		function (e) {
+			if (!activeObject || !activeClip) return;
+
+			_.merge(activeObject.userData, {
+				__editor: {
+					animations: {
+						[activeClipName]: {
+							audioDelay: Number(e.target.value)
+						}
+					}
+				}
+			});
+		}
+	);
+
 	audioRow.add(audio);
 	audioRow.add(audioReset);
 	audioRow.add( new UI.Text( 'volume' ).setWidth( '30px' ).setMarginLeft( '30px' ) );
 	audioRow.add(audioVolume.setMarginLeft( '20px' ));
+	audioRow.add(new UI.Break());
+	audioRow.add(new UI.Break());
+	audioRow.add( new UI.Text( 'Sound delay' ).setWidth( '90px' ).setMarginLeft( '0px' ) );
+	audioRow.add(audioDelay.setMarginLeft( '5px' ));
 
 	var audioNameRow = new UI.Row();
 
