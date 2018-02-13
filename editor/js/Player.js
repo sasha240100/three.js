@@ -2,7 +2,7 @@
  * @author mrdoob / http://mrdoob.com/
  */
 
-var context = new ( window.AudioContext || window.webkitAudioContext )();
+var context = THREE.AudioContext.getContext();
 
 var Player = function ( editor ) {
 
@@ -219,23 +219,29 @@ var Player = function ( editor ) {
 
 					function onPlay() {
 						if (data[1].audio) {
-							var source = window._source = context.createBufferSource();
+							// var source = window._source = context.createBufferSource();
 
-							console.log('ab', data[1].audio);
-							window.testBuff = data[1].audio;
+							// create an AudioListener and add it to the camera
+							const listener = new THREE.AudioListener();
+							camera.add(listener);
 
-							context.decodeAudioData( data[1].audio.slice(), function ( audioBuffer ) {
+							if (typeof data[1].audioVolume === 'number')
+								listener.setMasterVolume(data[1].audioVolume);
 
-								var gainNode = new GainNode(context);
+							// create the PositionalAudio object (passing in the listener)
+							const sound = new THREE.PositionalAudio( listener );
+							window._sound = sound;
 
-								if (typeof data[1].audioVolume === 'number')
-									gainNode.gain.value = data[1].audioVolume;
+							// load a sound and set it as the PositionalAudio object's buffer
+							const audioLoader = new THREE.AudioLoader();
+							// audioLoader.load( 'sounds/song.ogg', function( buffer ) {
+							context.decodeAudioData(data[1].audio.slice(), function (audioBuffer) {
+								sound.setBuffer(audioBuffer);
+								sound.setRefDistance(20);
+								sound.play();
+							});
 
-								source.buffer = audioBuffer;
-								source.connect(gainNode).connect(context.destination);
-								source.start();
-
-							} );
+							object.add(sound);
 						}
 					}
 
@@ -397,7 +403,7 @@ var Player = function ( editor ) {
 
 	signals.stopPlayer.add( function () {
 
-		if (window._source) window._source.stop();
+		if (window._sound) window._sound.stop();
 
 		container.setDisplay( 'none' );
 
