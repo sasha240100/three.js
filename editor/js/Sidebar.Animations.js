@@ -488,6 +488,18 @@ Sidebar.Animations = function ( editor ) {
 
 			if (data.audioName)
 				audioName.setValue( data.audioName.slice(0, 30) + '...' );
+			else
+				audioName.setValue( '' );
+
+			if (data.audioVolume)
+				audioVolume.setValue( +data.audioVolume );
+			else
+				audioVolume.setValue( 1 );
+
+			if (data.audioDelay)
+				audioDelay.setValue( +data.audioDelay );
+			else
+				audioDelay.setValue( 0 );
 
 			if (typeof data.loop === 'boolean')
 				loop.setValue(data.loop);
