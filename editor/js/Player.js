@@ -282,11 +282,12 @@ var Player = function ( editor ) {
 
 								var objects = [];
 
-								object.traverse( function (obj) {
+								(data[1].target ? scene.getObjectByName(data[1].target) : object)
+									.traverse( function (obj) {
 
-									objects.push(obj);
+										objects.push(obj);
 
-								} )
+									} )
 
 								var intersects = raycaster.intersectObjects( objects );
 								console.log('intersects', intersects);

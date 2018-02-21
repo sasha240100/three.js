@@ -109,6 +109,13 @@ Sidebar.Animations = function ( editor ) {
 		function (e) {
 			if (!activeObject || !activeClip) return;
 
+			const triggerName = e.target.value.toLowerCase();
+
+			if (triggerName == 'click')
+				targetObjectRow.setDisplay( '' );
+			else
+				targetObjectRow.setDisplay( 'none' );
+
 			_.merge(activeObject.userData, {
 				__editor: {
 					animations: {
@@ -123,6 +130,29 @@ Sidebar.Animations = function ( editor ) {
 
 	triggererRow.add( new UI.Text( 'Triggerer' ).setWidth( '90px' ) );
 	triggererRow.add( triggerer );
+
+	// target object Row
+	var targetObjectRow = new UI.Row();
+	targetObjectRow.setDisplay( 'none' );
+
+	var targetObject = new UI.Input().setWidth( '102px' ).setFontSize( '12px' ).setValue( '' ).onChange(
+		function (e) {
+			if (!activeObject || !activeClip) return;
+
+			_.merge(activeObject.userData, {
+				__editor: {
+					animations: {
+						[activeClipName]: {
+							target: e.target.value
+						}
+					}
+				}
+			});
+		}
+	);
+
+	targetObjectRow.add( new UI.Text( 'Target' ).setWidth( '90px' ) );
+	targetObjectRow.add( targetObject );
 
 	// clipDurationRow
 
@@ -420,6 +450,7 @@ Sidebar.Animations = function ( editor ) {
 
 	function updateUI(clip = null) {
 		triggererRow.setDisplay( 'none' );
+		targetObjectRow.setDisplay( 'none' );
 		clipDurationRow.setDisplay( 'none' );
 		loopRow.setDisplay( 'none' );
 		clipTrimRow.setDisplay( 'none' );
@@ -434,6 +465,7 @@ Sidebar.Animations = function ( editor ) {
 		activeClipName = clip.aliasName || clip.name;
 
 		triggererRow.setDisplay( '' );
+		// targetObjectRow.setDisplay( '' );
 		clipDuration.setValue( clip.duration );
 		clipEndTrim.setValue( 0 );
 		clipDurationRow.setDisplay( '' );
@@ -465,6 +497,16 @@ Sidebar.Animations = function ( editor ) {
 				triggerer.setValue( data.trigger );
 			else
 				triggerer.setValue( 'autostart' );
+
+			if (data.trigger && data.trigger === 'click')
+				targetObjectRow.setDisplay( '' );
+			else
+				targetObjectRow.setDisplay( 'none' );
+
+			if (data.target)
+				targetObject.setValue( data.target );
+			else
+				targetObject.setValue( '' );
 
 			if (data.duration)
 				clipDuration.setValue( data.duration );
@@ -534,6 +576,7 @@ Sidebar.Animations = function ( editor ) {
 	container.add( outliner );
 	container.add( new UI.Break() );
 	container.add( triggererRow );
+	container.add( targetObjectRow );
 	container.add( clipDurationRow );
 	container.add( loopRow );
 	container.add( clipTrimRow );
