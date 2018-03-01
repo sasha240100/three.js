@@ -91,241 +91,279 @@ var Player = function ( editor ) {
 				// console.log('test', object);
 
 				Object.entries(object.userData.__editor.animations).forEach(data => {
-					const name = data[1].alias || data[0];
+					(function animationByData(data, playTriggerer = false) {
+						const name = data[1].alias || data[0];
 
-					let clipObject = (
-						object
-						&& object.animations
-						&& object.animations.find(clip => clip.name === name)
-					) || (
-						object
-						&& object.geometry
-						&& object.geometry.animations
-						&& object.geometry.animations.find(clip => clip.name === name)
-					) || (
-						scene
-						&& scene.animations
-						&& scene.animations.find(clip => clip.name === name)
-					);
+						let clipObject = (
+							object
+							&& object.animations
+							&& object.animations.find(clip => clip.name === name)
+						) || (
+							object
+							&& object.geometry
+							&& object.geometry.animations
+							&& object.geometry.animations.find(clip => clip.name === name)
+						) || (
+							scene
+							&& scene.animations
+							&& scene.animations.find(clip => clip.name === name)
+						);
 
-					const FPS = +data[1].fps || 30;
+						const FPS = +data[1].fps || 30;
 
-					if (data[1].alias) {
-						clipObject = THREE.AnimationClip.parse(THREE.AnimationClip.toJSON(clipObject));
+						if (data[1].alias) {
+							clipObject = THREE.AnimationClip.parse(THREE.AnimationClip.toJSON(clipObject));
 
-						if (data[1].startTrim || data[1].endTrim) {
-							const startTime = (data[1].startTrim || 0) / FPS;
-							const endTime = data[1].endTrim ? data[1].endTrim / FPS : Infinity;
+							if (data[1].startTrim || data[1].endTrim) {
+								const startTime = (data[1].startTrim || 0) / FPS;
+								const endTime = data[1].endTrim ? data[1].endTrim / FPS : Infinity;
 
-							clipObject.tracks.forEach(track => {
-								const l = track.times.length;
+								clipObject.tracks.forEach(track => {
+									const l = track.times.length;
 
-								let closestToStart = 0, closestToStartIndex = 0;
-								let closestToEnd = Infinity, closestToEndIndex = l - 1;
+									let closestToStart = 0, closestToStartIndex = 0;
+									let closestToEnd = Infinity, closestToEndIndex = l - 1;
 
-								track.times.forEach((v, i) => {
-									//  5 - 4  < 5 -
-									if (Math.abs(v - startTime) < Math.abs(closestToStart - startTime) && v < startTime) {
-										closestToStart = v;
-										closestToStartIndex = i;
-										track.hasStart = true;
-									}
+									track.times.forEach((v, i) => {
+										//  5 - 4  < 5 -
+										if (Math.abs(v - startTime) < Math.abs(closestToStart - startTime) && v < startTime) {
+											closestToStart = v;
+											closestToStartIndex = i;
+											track.hasStart = true;
+										}
 
-									if (Math.abs(v - endTime) < Math.abs(closestToEnd - endTime) && v > endTime) {
-										closestToEnd = v;
-										closestToEndIndex = i;
-										track.hasEnd = true;
+										if (Math.abs(v - endTime) < Math.abs(closestToEnd - endTime) && v > endTime) {
+											closestToEnd = v;
+											closestToEndIndex = i;
+											track.hasEnd = true;
+										}
+									});
+
+									console.log(track.name + ' closestToStart', closestToStart);
+									console.log(track.name + ' closestToEnd', closestToEnd);
+
+									track.trim(
+										closestToStart,
+										closestToEnd
+									);
+
+									const startTimeStep = THREE.Math.smoothstep(startTime, track.times[0], track.times[1]);
+									const endTimeStep = THREE.Math.smoothstep(endTime, track.times[l - 2], track.times[l - 1]);
+
+									switch (track.ValueTypeName) {
+										case 'vector': {
+											track.values[0] = THREE.Math.lerp(track.values[0], track.values[3], startTimeStep);
+											track.values[1] = THREE.Math.lerp(track.values[1], track.values[4], startTimeStep);
+											track.values[2] = THREE.Math.lerp(track.values[2], track.values[5], startTimeStep);
+
+											const lIndex = (l - 1) * 3;
+
+											track.values[lIndex + 0] = THREE.Math.lerp(track.values[lIndex - 3], track.values[lIndex + 0], endTimeStep);
+											track.values[lIndex + 1] = THREE.Math.lerp(track.values[lIndex - 2], track.values[lIndex + 1], endTimeStep);
+											track.values[lIndex + 2] = THREE.Math.lerp(track.values[lIndex - 1], track.values[lIndex + 2], endTimeStep);
+
+											break;
+										} case 'quaternion': {
+											track.values[0] = THREE.Math.lerp(track.values[0], track.values[4], startTimeStep);
+											track.values[1] = THREE.Math.lerp(track.values[1], track.values[5], startTimeStep);
+											track.values[2] = THREE.Math.lerp(track.values[2], track.values[6], startTimeStep);
+											track.values[3] = THREE.Math.lerp(track.values[3], track.values[7], startTimeStep);
+
+											const lIndex = (l - 1) * 4;
+
+											track.values[lIndex + 0] = THREE.Math.lerp(track.values[lIndex - 4], track.values[lIndex + 0], endTimeStep);
+											track.values[lIndex + 1] = THREE.Math.lerp(track.values[lIndex - 3], track.values[lIndex + 1], endTimeStep);
+											track.values[lIndex + 2] = THREE.Math.lerp(track.values[lIndex - 2], track.values[lIndex + 2], endTimeStep);
+											track.values[lIndex + 3] = THREE.Math.lerp(track.values[lIndex - 1], track.values[lIndex + 3], endTimeStep);
+
+											break;
+										}
+										default:
+
 									}
 								});
 
-								console.log(track.name + ' closestToStart', closestToStart);
-								console.log(track.name + ' closestToEnd', closestToEnd);
+								clipObject.trim(); //.resetDuration();
 
-								track.trim(
-									closestToStart,
-									closestToEnd
-								);
+								clipObject.tracks.forEach(track => {
+									if (track.hasStart) track.times[0] = startTime;
+									if (track.hasEnd) track.times[track.times.length - 1] = endTime;
 
-								const startTimeStep = THREE.Math.smoothstep(startTime, track.times[0], track.times[1]);
-								const endTimeStep = THREE.Math.smoothstep(endTime, track.times[l - 2], track.times[l - 1]);
+									track.shift(-startTime);
 
-								switch (track.ValueTypeName) {
-									case 'vector': {
-										track.values[0] = THREE.Math.lerp(track.values[0], track.values[3], startTimeStep);
-										track.values[1] = THREE.Math.lerp(track.values[1], track.values[4], startTimeStep);
-										track.values[2] = THREE.Math.lerp(track.values[2], track.values[5], startTimeStep);
+									if (track.times.length < 2)
+										clipObject.tracks = clipObject.tracks.filter(t => t != track);
+								});
 
-										const lIndex = (l - 1) * 3;
+								if (data[1].endTrim)
+									clipObject.duration = data[1].endTrim / FPS;
 
-										track.values[lIndex + 0] = THREE.Math.lerp(track.values[lIndex - 3], track.values[lIndex + 0], endTimeStep);
-										track.values[lIndex + 1] = THREE.Math.lerp(track.values[lIndex - 2], track.values[lIndex + 1], endTimeStep);
-										track.values[lIndex + 2] = THREE.Math.lerp(track.values[lIndex - 1], track.values[lIndex + 2], endTimeStep);
+								if (data[1].startTrim)
+									clipObject.duration -= data[1].startTrim / FPS;
+							}
+						}
+
+						const action = clipObject && mixer.clipAction(clipObject, object);
+
+						// Duration
+						if (data[1].duration)
+							action.setDuration(data[1].duration);
+
+						// Set default looping mode.
+						action.setLoop(THREE.LoopOnce);
+
+						// Loop
+						if (typeof data[1].loop === 'boolean')
+							action.setLoop(data[1].loop ? THREE.LoopRepeat : THREE.LoopOnce);
+
+						action.clampWhenFinished = true;
+
+						// Duration
+						function onEnd() {
+							if (data[1].action) {
+								switch (data[1].action) {
+									case 'url':
+										const url = data[1].url;
+										if (!url) return;
+
+										const win = window.open(url, '_blank');
+										win.focus();
 
 										break;
-									} case 'quaternion': {
-										track.values[0] = THREE.Math.lerp(track.values[0], track.values[4], startTimeStep);
-										track.values[1] = THREE.Math.lerp(track.values[1], track.values[5], startTimeStep);
-										track.values[2] = THREE.Math.lerp(track.values[2], track.values[6], startTimeStep);
-										track.values[3] = THREE.Math.lerp(track.values[3], track.values[7], startTimeStep);
+									case 'clip_select':
+										const clipSelect = data[1].clipSelect;
+										if (!clipSelect) return;
 
-										const lIndex = (l - 1) * 4;
+										// Prevent from looping
+										const endData = clone(object.userData.__editor.animations[clipSelect]);
+										endData.action = 'none';
 
-										track.values[lIndex + 0] = THREE.Math.lerp(track.values[lIndex - 4], track.values[lIndex + 0], endTimeStep);
-										track.values[lIndex + 1] = THREE.Math.lerp(track.values[lIndex - 3], track.values[lIndex + 1], endTimeStep);
-										track.values[lIndex + 2] = THREE.Math.lerp(track.values[lIndex - 2], track.values[lIndex + 2], endTimeStep);
-										track.values[lIndex + 3] = THREE.Math.lerp(track.values[lIndex - 1], track.values[lIndex + 3], endTimeStep);
+										animationByData(
+											[clipSelect, endData],
+											'autostart'
+										);
 
-										break;
-									}
 									default:
 
 								}
-							});
-
-							clipObject.trim(); //.resetDuration();
-
-							clipObject.tracks.forEach(track => {
-								if (track.hasStart) track.times[0] = startTime;
-								if (track.hasEnd) track.times[track.times.length - 1] = endTime;
-
-								track.shift(-startTime);
-
-								if (track.times.length < 2)
-									clipObject.tracks = clipObject.tracks.filter(t => t != track);
-							});
-
-							if (data[1].endTrim)
-								clipObject.duration = data[1].endTrim / FPS;
-
-							if (data[1].startTrim)
-								clipObject.duration -= data[1].startTrim / FPS;
+							}
 						}
-					}
 
-					const action = clipObject && mixer.clipAction(clipObject, object);
+						function onPlay() {
+							if (data[1].audio) {
+								let delay = 0;
+								// var source = window._source = context.createBufferSource();
 
-					// Duration
-					if (data[1].duration)
-						action.setDuration(data[1].duration);
+								// create an AudioListener and add it to the camera
+								const listener = new THREE.AudioListener();
+								camera.add(listener);
 
-					// Set default looping mode.
-					action.setLoop(THREE.LoopOnce);
+								if (typeof data[1].audioVolume === 'number')
+									listener.setMasterVolume(data[1].audioVolume);
 
-					// Loop
-					if (typeof data[1].loop === 'boolean')
-						action.setLoop(data[1].loop ? THREE.LoopRepeat : THREE.LoopOnce);
+								if (typeof data[1].audioDelay === 'number')
+									delay = +data[1].audioDelay;
 
-					action.clampWhenFinished = true;
+								// create the PositionalAudio object (passing in the listener)
+								const sound = new THREE.PositionalAudio( listener );
+								window._sound = sound;
 
-					function onPlay() {
-						if (data[1].audio) {
-							let delay = 0;
-							// var source = window._source = context.createBufferSource();
+								// load a sound and set it as the PositionalAudio object's buffer
+								const audioLoader = new THREE.AudioLoader();
+								// audioLoader.load( 'sounds/song.ogg', function( buffer ) {
+								context.decodeAudioData(data[1].audio.slice(), function (audioBuffer) {
+									sound.setBuffer(audioBuffer);
+									sound.setRefDistance(20);
+									setTimeout(() => sound.play(), delay * 1000);
+								});
 
-							// create an AudioListener and add it to the camera
-							const listener = new THREE.AudioListener();
-							camera.add(listener);
-
-							if (typeof data[1].audioVolume === 'number')
-								listener.setMasterVolume(data[1].audioVolume);
-
-							if (typeof data[1].audioDelay === 'number')
-								delay = +data[1].audioDelay;
-
-							// create the PositionalAudio object (passing in the listener)
-							const sound = new THREE.PositionalAudio( listener );
-							window._sound = sound;
-
-							// load a sound and set it as the PositionalAudio object's buffer
-							const audioLoader = new THREE.AudioLoader();
-							// audioLoader.load( 'sounds/song.ogg', function( buffer ) {
-							context.decodeAudioData(data[1].audio.slice(), function (audioBuffer) {
-								sound.setBuffer(audioBuffer);
-								sound.setRefDistance(20);
-								setTimeout(() => sound.play(), delay * 1000);
-							});
-
-							object.add(sound);
-						}
-					}
-
-					// Triggerer
-					switch (data[1].trigger) {
-						case 'autostart':
-							if (object.material) {
-
-								object.material.morphTargets = true;
-								object.material.skinning = true;
-
+								object.add(sound);
 							}
 
-							mixerHasAnimation = true;
+							action.getMixer().addEventListener('finished', (e) => {
+								if (e.action === action)
+									onEnd();
+							});
+						}
 
-							mixer.stopAllAction();
-							action.play();
-							onPlay();
-							break;
-						case 'click':
+						// Triggerer
+						switch (playTriggerer || data[1].trigger) {
+							case 'autostart':
+								if (object.material) {
 
-							mixerHasAnimation = true;
-
-							if (object.material) {
-
-								object.material.morphTargets = true;
-								object.material.skinning = true;
-
-							}
-
-							function handleClickTouch() {
-
-								raycaster.setFromCamera( mouse, camera );
-
-								var objects = [];
-
-								(data[1].target ? scene.getObjectByName(data[1].target) : object)
-									.traverse( function (obj) {
-
-										objects.push(obj);
-
-									} )
-
-								var intersects = raycaster.intersectObjects( objects );
-								console.log('intersects', intersects);
-								// console.log('mx', mouse.x, 'my', mouse.y);
-
-								if (intersects[0]) {
-
-									mixer.stopAllAction();
-									action.play().reset();
-									onPlay();
+									object.material.morphTargets = true;
+									object.material.skinning = true;
 
 								}
 
-							}
+								mixerHasAnimation = true;
 
-							window.addEventListener( 'click', handleClickTouch );
+								mixer.stopAllAction();
+								action.play();
+								onPlay();
+								break;
+							case 'click':
 
-							listeners.push( [ handleClickTouch, "click" ] );
+								mixerHasAnimation = true;
 
-							break;
+								if (object.material) {
 
-						case 'none':
-							// action.play();
-							break;
-						default:
-							if (object.material) {
+									object.material.morphTargets = true;
+									object.material.skinning = true;
 
-								object.material.morphTargets = true;
-								object.material.skinning = true;
+								}
 
-							}
+								function handleClickTouch() {
 
-							mixerHasAnimation = true;
+									raycaster.setFromCamera( mouse, camera );
 
-							mixer.stopAllAction();
-							action.play();
-							onPlay();
-					}
+									var objects = [];
+
+									(data[1].target ? scene.getObjectByName(data[1].target) : object)
+										.traverse( function (obj) {
+
+											objects.push(obj);
+
+										} )
+
+									var intersects = raycaster.intersectObjects( objects );
+									console.log('intersects', intersects);
+									// console.log('mx', mouse.x, 'my', mouse.y);
+
+									if (intersects[0]) {
+
+										mixer.stopAllAction();
+										action.play().reset();
+										onPlay();
+
+									}
+
+								}
+
+								window.addEventListener( 'click', handleClickTouch );
+
+								listeners.push( [ handleClickTouch, "click" ] );
+
+								break;
+
+							case 'none':
+								// action.play();
+								break;
+							default:
+								if (object.material) {
+
+									object.material.morphTargets = true;
+									object.material.skinning = true;
+
+								}
+
+								mixerHasAnimation = true;
+
+								mixer.stopAllAction();
+								action.play();
+								onPlay();
+						}
+					})(data);
 				});
 
 			} else {

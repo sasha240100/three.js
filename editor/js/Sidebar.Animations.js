@@ -260,6 +260,112 @@ Sidebar.Animations = function ( editor ) {
 	clipTrimRow.add( new UI.Text( 'fps' ).setWidth( '30px' ) );
 	clipTrimRow.add( clipFPS );
 
+	// target object Row
+	var urlRow = new UI.Row();
+	urlRow.setDisplay( 'none' );
+
+	var url = new UI.Input().setWidth( '182px' ).setFontSize( '12px' ).setValue( '' ).onChange(
+		function (e) {
+			if (!activeObject || !activeClip) return;
+
+			_.merge(activeObject.userData, {
+				__editor: {
+					animations: {
+						[activeClipName]: {
+							url: e.target.value
+						}
+					}
+				}
+			});
+		}
+	);
+
+	urlRow.add( new UI.Text( 'URL:' ).setWidth( '90px' ) );
+	urlRow.add( url );
+
+	// target object Row
+	var clipSelectRow = new UI.Row();
+	clipSelectRow.setDisplay( 'none' );
+
+	var clipSelect = new UI.Select().setWidth( '182px' ).setFontSize( '12px' ).setValue( '' ).onChange(
+		function (e) {
+			if (!activeObject || !activeClip) return;
+
+			_.merge(activeObject.userData, {
+				__editor: {
+					animations: {
+						[activeClipName]: {
+							clipSelect: e.target.value
+						}
+					}
+				}
+			});
+		}
+	);
+
+	function updateClipSelect() {
+		if (!activeObject || !activeClip) return;
+
+		const options = outliner.options.map(tag => tag.innerText.split(' ')[1]);
+
+		clipSelect.setOptions(
+			options.reduce(
+				(obj, option) => (obj[option] = option, obj),
+				{}
+			)
+		);
+	}
+
+	clipSelectRow.add( new UI.Text( 'Select clip:' ).setWidth( '90px' ) );
+	clipSelectRow.add( clipSelect );
+
+	// Animation end row
+
+	var animEndRow = new UI.Row();
+	animEndRow.setDisplay( 'none' );
+	var animEnd = new UI.Select().setOptions( {
+
+		'none': 'none',
+		'url': 'URL',
+		'clip_select': 'Clip select',
+		'load_scene': 'Load scene'
+
+	} ).setWidth( '150px' ).setFontSize( '12px' ).setValue( 'none' ).onChange(
+		function (e) {
+			if (!activeObject || !activeClip) return;
+
+			const actionName = e.target.value.toLowerCase();
+
+			urlRow.setDisplay( 'none' );
+			clipSelectRow.setDisplay( 'none' );
+
+			switch (actionName) {
+				case 'url':
+					urlRow.setDisplay( '' );
+					break;
+				case 'clip_select':
+					clipSelectRow.setDisplay( '' );
+					break;
+
+				default:
+
+			}
+
+			_.merge(activeObject.userData, {
+				__editor: {
+					animations: {
+						[activeClipName]: {
+							action: actionName === 'none' ? false : actionName
+						}
+					}
+				}
+			});
+		}
+	);
+
+	animEndRow.add( new UI.Text( 'Animation ends with:' ).setWidth( '90px' ) );
+	animEndRow.add( animEnd );
+
 	var aliasRow = new UI.Row();
 	aliasRow.setDisplay( 'none' );
 
@@ -458,6 +564,7 @@ Sidebar.Animations = function ( editor ) {
 		aliasRemoveRow.setDisplay( 'none' );
 		audioRow.setDisplay( 'none' );
 		audioNameRow.setDisplay( 'none' );
+		animEndRow.setDisplay( 'none' );
 
 		if (!clip) return;
 
@@ -474,6 +581,9 @@ Sidebar.Animations = function ( editor ) {
 		audioRow.setDisplay( '' );
 		audioNameRow.setDisplay( '' );
 		audioName.setValue( '' );
+		animEndRow.setDisplay( '' );
+
+		updateClipSelect();
 
 		if (clip.aliasName) {
 			aliasRemoveRow.setDisplay( '' );
@@ -545,6 +655,24 @@ Sidebar.Animations = function ( editor ) {
 
 			if (typeof data.loop === 'boolean')
 				loop.setValue(data.loop);
+
+			if (data.action) {
+				animEnd.setValue( data.action );
+
+				switch (data.action) {
+					case 'url':
+						urlRow.setDisplay( '' );
+						break;
+					default:
+
+				}
+			} else
+				animEnd.setValue( 'none' );
+
+			if (data.url)
+				url.setValue( data.url );
+			else
+				url.setValue( '' );
 		}
 	}
 
@@ -575,13 +703,16 @@ Sidebar.Animations = function ( editor ) {
 
 	container.add( outliner );
 	container.add( new UI.Break() );
+	container.add( aliasRow );
+	container.add( aliasRemoveRow );
 	container.add( triggererRow );
 	container.add( targetObjectRow );
 	container.add( clipDurationRow );
 	container.add( loopRow );
 	container.add( clipTrimRow );
-	container.add( aliasRow );
-	container.add( aliasRemoveRow );
+	container.add( animEndRow );
+	container.add( urlRow );
+	container.add( clipSelectRow );
 	container.add( audioRow );
 	container.add( audioNameRow );
 
