@@ -218,7 +218,7 @@ var Player = function ( editor ) {
 
 						action.clampWhenFinished = true;
 
-						// Duration
+						// End
 						function onEnd() {
 							if (data[1].action) {
 								switch (data[1].action) {
@@ -240,7 +240,7 @@ var Player = function ( editor ) {
 
 										animationByData(
 											[clipSelect, endData],
-											'autostart'
+											// 'autostart'
 										);
 
 									default:
