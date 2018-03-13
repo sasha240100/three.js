@@ -643,6 +643,16 @@ var Loader = function ( editor ) {
 
 				var result = loader.parse( data );
 
+				for (child of result.children) {
+					if (child.name === 'Camera') {
+						for (camChild of child.children) {
+							editor.camera.add(camChild);
+						}
+
+						result.remove(child);
+					}
+				}
+
 				handleGeometries(result, data);
 
 				if ( result instanceof THREE.Scene ) {
@@ -692,6 +702,8 @@ var Loader = function ( editor ) {
 
 		if ('object' in data) {
 			function traverse(obj) {
+				console.log(obj);
+
 				if (obj.userData
 					&& obj.userData.__editor
 					&& obj.userData.__editor.animations
@@ -703,8 +715,15 @@ var Loader = function ( editor ) {
 					});
 				}
 
-				if (obj.children)
-					obj.children.forEach(child => traverse(child));
+				// if (obj.name === 'Camera') {
+				// 	for (let child of obj.children) {
+				// 		console.log('child', child);
+				// 		editor.camera.add(child);
+				// 	}
+				// } else {
+					if (obj.children)
+						obj.children.forEach(child => traverse(child));
+				// }
 			}
 
 			traverse(data.object);

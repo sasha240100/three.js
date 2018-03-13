@@ -174,6 +174,8 @@ Menubar.File = function ( editor ) {
 	option.setTextContent( 'Export Scene' );
 	option.onClick( function () {
 
+		editor.camera.remove(editor.frame);
+
 		var output = editor.scene.toJSON();
 
 		if (Object.values(editor.animations).length > 0)
@@ -221,6 +223,8 @@ Menubar.File = function ( editor ) {
 		}
 
 		saveString( output, 'scene.json' );
+
+		editor.camera.add(editor.frame);
 
 	} );
 	options.add( option );

@@ -83,6 +83,8 @@ var Editor = function () {
 	this.scene.name = 'Scene';
 	this.scene.background = new THREE.Color( 0xaaaaaa );
 
+	this.scene.add(this.camera);
+
 	this.sceneHelpers = new THREE.Scene();
 
 	this.object = {};
@@ -99,6 +101,48 @@ var Editor = function () {
 
 	this.selected = null;
 	this.helpers = {};
+
+	this.PHONE_ASPECTS = {
+		iphone: 1.778
+	};
+
+	function generatePlaneGeometry(x, y) {
+		var geom = new THREE.Geometry();
+
+		geom.vertices.push(new THREE.Vector3(-x/2, -y/2, 0));
+		geom.vertices.push(new THREE.Vector3(x/2, -y/2, 0));
+		geom.vertices.push(new THREE.Vector3(x/2, y/2, 0));
+		geom.vertices.push(new THREE.Vector3(-x/2, y/2, 0));
+		geom.vertices.push(new THREE.Vector3(-x/2, -y/2, 0));
+
+		// geom.faces.push(new THREE.Face4(0, 1, 2, 3));
+
+		geom.verticesNeedUpdate = true;
+
+		return geom;
+	}
+
+	this.frame = new THREE.Object3D();
+	this.frame.name = '__editor__Frame';
+	var delta = 0.05;
+
+	this.frame.add(
+		new THREE.Line(
+			generatePlaneGeometry(10 / this.PHONE_ASPECTS.iphone, 10),
+			new THREE.LineBasicMaterial({color: 0xff0000})
+		)
+	);
+
+	this.frame.add(
+		new THREE.Line(
+			generatePlaneGeometry(10 / this.PHONE_ASPECTS.iphone + delta, 10 + delta),
+			new THREE.LineBasicMaterial({color: 0xff0000})
+		)
+	);
+
+	this.frame.position.set(0, 0, -10.8);
+
+	this.camera.add(this.frame);
 
 };
 
@@ -512,6 +556,8 @@ Editor.prototype = {
 		var scene = this.scene;
 		var scripts = this.scripts;
 
+		this.camera.remove(this.frame);
+
 		for ( var key in scripts ) {
 
 			var script = scripts[ key ];
@@ -555,7 +601,9 @@ Editor.prototype = {
 		// 		object.children.forEach(child => writeAnimation.call(this, child));
 		// }).call(this, sceneJson.object);
 
-		console.log('sceneJson', sceneJson);
+		// console.log('sceneJson', sceneJson);
+
+		this.camera.add(this.frame);
 
 		return {
 

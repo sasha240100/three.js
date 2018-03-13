@@ -16,7 +16,7 @@ Sidebar.Scene = function ( editor ) {
 
 		var option = document.createElement( 'div' );
 		option.draggable = draggable;
-		option.innerHTML = buildHTML( object );
+		option.innerHTML = buildHTML( object, draggable );
 		option.value = object.id;
 
 		return option;
@@ -43,9 +43,12 @@ Sidebar.Scene = function ( editor ) {
 
 	}
 
-	function buildHTML( object ) {
+	function buildHTML( object, rename ) {
 
-		var html = '<span class="type ' + object.type + '"></span> ' + object.name;
+		// console.log(object);
+		var isCANVAS_ZONE = object === editor.camera && rename;
+
+		var html = '<span class="type ' + object.type + '" ' + (isCANVAS_ZONE ? ' style="color: cornflowerblue;" ' : '') + '></span> ' + (isCANVAS_ZONE ? 'CANVAS ZONE' : object.name);
 
 		if ( object instanceof THREE.Mesh ) {
 
@@ -191,12 +194,14 @@ Sidebar.Scene = function ( editor ) {
 
 				var object = objects[ i ];
 
-				var option = buildOption( object, true );
-				option.style.paddingLeft = ( pad * 10 ) + 'px';
-				options.push( option );
+				if (object.name !== '__editor__Frame') {
+					var option = buildOption( object, true );
+					option.style.paddingLeft = ( pad * 10 ) + 'px';
+					options.push( option );
 
-				addObjects( object.children, pad + 1 );
-
+					addObjects( object.children, pad + 1 );
+				}
+				
 			}
 
 		} )( scene.children, 1 );

@@ -313,7 +313,8 @@ var Player = function ( editor ) {
 
 								}
 
-								function handleClickTouch() {
+								function handleClickTouch(e) {
+									if (e.target !== document.querySelector('#player canvas')) return;
 
 									raycaster.setFromCamera( mouse, camera );
 
@@ -331,6 +332,7 @@ var Player = function ( editor ) {
 									// console.log('mx', mouse.x, 'my', mouse.y);
 
 									if (intersects[0]) {
+
 
 										mixer.stopAllAction();
 										action.play().reset();
@@ -356,6 +358,7 @@ var Player = function ( editor ) {
 									object.material.skinning = true;
 
 								}
+
 
 								mixerHasAnimation = true;
 
