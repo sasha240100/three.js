@@ -656,13 +656,20 @@ Sidebar.Animations = function ( editor ) {
 			if (typeof data.loop === 'boolean')
 				loop.setValue(data.loop);
 
+
+			urlRow.setDisplay( 'none' );
+			clipSelectRow.setDisplay( 'none' );
+
 			if (data.action) {
 				animEnd.setValue( data.action );
-
+				
 				switch (data.action) {
 					case 'url':
 						urlRow.setDisplay( '' );
 						break;
+					case 'clip_select':
+						clipSelectRow.setDisplay( '' );
+
 					default:
 
 				}
@@ -673,6 +680,11 @@ Sidebar.Animations = function ( editor ) {
 				url.setValue( data.url );
 			else
 				url.setValue( '' );
+
+			if (data.clipSelect)
+				clipSelect.setValue( data.clipSelect );
+			else
+				clipSelect.setValue( '' );
 		}
 	}
 
