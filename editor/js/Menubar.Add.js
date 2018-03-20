@@ -238,6 +238,22 @@ Menubar.Add = function ( editor ) {
 	} );
 	options.add( option );
 
+	// Sprite
+
+	var option = new UI.Row();
+	option.setClass( 'option' );
+	option.setTextContent( 'Button' );
+	option.onClick( function () {
+
+		var button = new THREE.Sprite( new THREE.SpriteMaterial() );
+		button.name = 'Button';
+		button.isButton = true;
+
+		editor.execute( new AddObjectCommand( button ) );
+
+	} );
+	options.add( option );
+
 	//
 
 	options.add( new UI.HorizontalRule() );

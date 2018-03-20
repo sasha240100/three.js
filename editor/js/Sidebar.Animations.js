@@ -14,11 +14,11 @@ Sidebar.Animations = function ( editor ) {
 
 	// outliner
 
-	function buildOption( clip, aliasName, aliasData ) {
+	function buildOption( clip, aliasName, aliasData, object ) {
 
 		var option = document.createElement( 'div' );
 		option.draggable = false;
-		option.innerHTML = buildHTML( clip, aliasName );
+		option.innerHTML = (object ? '<span>[ ' + object.name + ' ] </span>' : '') + buildHTML( clip, aliasName ) ;
 		option.value = aliasName ? {
 			clip,
 			aliasName,
@@ -46,50 +46,56 @@ Sidebar.Animations = function ( editor ) {
 	// options.push( buildOption( camera, false ) );
 	// console.log(editor.selected);
 
+	let activeUpdateUIFunction;
+
 	outliner.onChange( function () {
 
-		updateUI( outliner.getValue() );
+		activeUpdateUIFunction( outliner.getValue() );
 
 	} );
 
-	function updateOutliner( object ) {
-		var animations = object.animations
-			|| (
-				object.geometry
-				&& object.geometry.animations
-			) || (
-				editor.animations
-				&& editor.animations[ object.uuid ]
-			) || (
-				editor.animations
-				&& object.geometry
-				&& editor.animations[ object.geometry.uuid ]
-			);
-
+	function updateOutliner( isButtonUI, objects ) {
 		var options = [];
 
-		outliner.setOptions([]);
-		container.setDisplay( 'none' );
-		if (!animations) return;
+		for (let object of objects) {
+			const animations = object.animations
+				|| (
+					object.geometry
+					&& object.geometry.animations
+				) || (
+					editor.animations
+					&& editor.animations[ object.uuid ]
+				) || (
+					editor.animations
+					&& object.geometry
+					&& editor.animations[ object.geometry.uuid ]
+				);
 
-		container.setDisplay( '' );
+			outliner.setOptions([]);
+			container.setDisplay( 'none' );
+			if (!animations) continue;
 
-		animations.forEach(clip => {
-			options.push( buildOption( clip ) );
+			container.setDisplay( '' );
 
-			if (
-				object.userData
-				&& object.userData.__editor
-				&& object.userData.__editor.animations
-			) {
-				Object.entries(object.userData.__editor.animations).forEach(([name, data]) => {
-					if (data.alias && data.alias === clip.name) {
-						options.push( buildOption( clip, name, data ) );
-					}
-				})
-			}
-		});
-		// console.log(animations);
+			animations.forEach(clip => {
+				options.push( buildOption( clip, false, false, isButtonUI && object ) );
+
+				if (
+					object.userData
+					&& object.userData.__editor
+					&& object.userData.__editor.animations
+				) {
+					Object.entries(object.userData.__editor.animations).forEach(([name, data]) => {
+						if (data.alias && data.alias === clip.name) {
+							options.push( buildOption( clip, name, data, isButtonUI && object ) );
+						}
+					})
+				}
+			});
+			// console.log(animations);
+		}
+
+		console.log(options);
 
 		outliner.setOptions( options );
 	}
@@ -266,10 +272,14 @@ Sidebar.Animations = function ( editor ) {
 
 	var url = new UI.Input().setWidth( '182px' ).setFontSize( '12px' ).setValue( '' ).onChange(
 		function (e) {
-			if (!activeObject || !activeClip) return;
+			if (!activeObject || (!activeClip && !activeObject.isButton)) return;
 
 			_.merge(activeObject.userData, {
-				__editor: {
+				__editor: activeObject.isButton ? {
+					button: {
+						url: e.target.value
+					}
+				} : {
 					animations: {
 						[activeClipName]: {
 							url: e.target.value
@@ -292,7 +302,11 @@ Sidebar.Animations = function ( editor ) {
 			if (!activeObject || !activeClip) return;
 
 			_.merge(activeObject.userData, {
-				__editor: {
+				__editor: activeObject.isButton ? {
+					button: {
+						clipSelect: e.target.value
+					}
+				} : {
 					animations: {
 						[activeClipName]: {
 							clipSelect: e.target.value
@@ -307,6 +321,31 @@ Sidebar.Animations = function ( editor ) {
 		if (!activeObject || !activeClip) return;
 
 		const options = outliner.options.map(tag => tag.innerText.split(' ')[1]);
+
+		clipSelect.setOptions(
+			options.reduce(
+				(obj, option) => (obj[option] = option, obj),
+				{}
+			)
+		);
+	}
+
+	function updateClipSelectForButton() {
+		if (!activeObject) return;
+
+		const options = [];
+
+		editor.scene.traverse((object) => {
+			if (
+				object.userData
+				&& object.userData.__editor
+				&& object.userData.__editor.animations
+			) {
+				for (let name in object.userData.__editor.animations) {
+					options.push(name);
+				}
+			}
+		});
 
 		clipSelect.setOptions(
 			options.reduce(
@@ -396,7 +435,7 @@ Sidebar.Animations = function ( editor ) {
 				}
 			});
 
-			updateOutliner(activeObject);
+			updateOutliner(false, [activeObject]);
 		}
   );
 
@@ -413,7 +452,7 @@ Sidebar.Animations = function ( editor ) {
 			delete activeObject.userData.__editor.animations[ activeClipName ];
 
 			activeClipName = activeClip.name;
-			updateOutliner(activeObject);
+			updateOutliner(false, [activeObject]);
 			updateUI(activeClip);
 		}
   );
@@ -421,6 +460,7 @@ Sidebar.Animations = function ( editor ) {
 	aliasRemoveRow.add( aliasRemove );
 
 	var audioRow = new UI.Row();
+	audioRow.setDisplay( 'none' );
 
 	audioRow.add( new UI.Break() );
 	audioRow.add( new UI.Text( 'Audio' ).setWidth( '7px' ) );
@@ -449,7 +489,12 @@ Sidebar.Animations = function ( editor ) {
 			// editor.audio[file.name] = evt.target.result;
 
 			_.merge(activeObject.userData, {
-				__editor: {
+				__editor: activeObject.isButton ? {
+					button: {
+						audio: evt.target.result,
+						audioName: file.name
+					}
+				} : {
 					animations: {
 						[activeClipName]: {
 							audio: evt.target.result,
@@ -481,7 +526,11 @@ Sidebar.Animations = function ( editor ) {
 
 		_.merge(activeObject.userData, {
 			__editor: {
-				animations: {
+				animations: activeObject.isButton ? {
+					button: {
+						audio: false
+					}
+				} : {
 					[activeClipName]: {
 						audio: false
 					}
@@ -496,7 +545,11 @@ Sidebar.Animations = function ( editor ) {
 			if (!activeObject || !activeClip) return;
 
 			_.merge(activeObject.userData, {
-				__editor: {
+				__editor: activeObject.isButton ? {
+					button: {
+						audioVolume: Number(e.target.value)
+					}
+				} : {
 					animations: {
 						[activeClipName]: {
 							audioVolume: Number(e.target.value)
@@ -512,7 +565,11 @@ Sidebar.Animations = function ( editor ) {
 			if (!activeObject || !activeClip) return;
 
 			_.merge(activeObject.userData, {
-				__editor: {
+				__editor: activeObject.isButton ? {
+					button: {
+						audioDelay: Number(e.target.value)
+					}
+				} : {
 					animations: {
 						[activeClipName]: {
 							audioDelay: Number(e.target.value)
@@ -555,6 +612,8 @@ Sidebar.Animations = function ( editor ) {
 	// );
 
 	function updateUI(clip = null) {
+		outliner.setDisplay( '' );
+
 		triggererRow.setDisplay( 'none' );
 		targetObjectRow.setDisplay( 'none' );
 		clipDurationRow.setDisplay( 'none' );
@@ -662,7 +721,7 @@ Sidebar.Animations = function ( editor ) {
 
 			if (data.action) {
 				animEnd.setValue( data.action );
-				
+
 				switch (data.action) {
 					case 'url':
 						urlRow.setDisplay( '' );
@@ -688,20 +747,163 @@ Sidebar.Animations = function ( editor ) {
 		}
 	}
 
+	var eventTypeRow = new UI.Row();
+	eventTypeRow.setDisplay( 'none' );
+
+	var eventType = new UI.Select().setOptions( {
+
+		'none': 'none',
+		'url': 'URL',
+		'clip_select': 'Clip select',
+		'audio': 'Audio',
+		'load_scene': 'Load scene'
+
+	} ).setWidth( '150px' ).setFontSize( '12px' ).setValue( 'none' ).onChange(
+		function (e) {
+			if (!activeObject) return;
+
+			const actionName = e.target.value.toLowerCase();
+
+			urlRow.setDisplay( 'none' );
+			clipSelectRow.setDisplay( 'none' );
+			audioRow.setDisplay( 'none' );
+			audioNameRow.setDisplay( 'none' );
+
+			switch (actionName) {
+				case 'url':
+					urlRow.setDisplay( '' );
+					break;
+				case 'clip_select':
+					clipSelectRow.setDisplay( '' );
+					updateClipSelectForButton();
+					break;
+				case 'audio':
+					audioRow.setDisplay( '' );
+					audioNameRow.setDisplay( '' );
+					break;
+
+				default:
+
+			}
+
+			_.merge(activeObject.userData, {
+				__editor: {
+					button: {
+						action: actionName === 'none' ? false : actionName
+					}
+				}
+			});
+		}
+	);
+
+	eventTypeRow.add( new UI.Text( 'Event type:' ).setWidth( '90px' ) );
+	eventTypeRow.add( eventType );
+
+	function updateButtonUI() {
+		outliner.setDisplay( 'none' );
+		eventTypeRow.setDisplay( '' );
+
+		if (
+			activeObject
+			&& activeObject.userData
+			&& activeObject.userData.__editor
+			&& activeObject.userData.__editor.button
+		) {
+			const data = activeObject.userData.__editor.button;
+
+			if (data.audioName)
+				audioName.setValue( data.audioName.slice(0, 30) + '...' );
+			else
+				audioName.setValue( '' );
+
+			if (data.audioVolume)
+				audioVolume.setValue( +data.audioVolume );
+			else
+				audioVolume.setValue( 1 );
+
+			if (data.audioDelay)
+				audioDelay.setValue( +data.audioDelay );
+			else
+				audioDelay.setValue( 0 );
+
+			if (typeof data.loop === 'boolean')
+				loop.setValue(data.loop);
+
+
+			urlRow.setDisplay( 'none' );
+			clipSelectRow.setDisplay( 'none' );
+
+			if (data.action) {
+				eventType.setValue( data.action );
+
+				switch (data.action) {
+					case 'url':
+						urlRow.setDisplay( '' );
+						break;
+					case 'clip_select':
+						clipSelectRow.setDisplay( '' );
+
+					default:
+
+				}
+			} else
+				eventType.setValue( 'none' );
+
+			if (data.url)
+				url.setValue( data.url );
+			else
+				url.setValue( '' );
+
+			if (data.clipSelect)
+				clipSelect.setValue( data.clipSelect );
+			else
+				clipSelect.setValue( '' );
+		}
+		// ...
+	}
+
+	activeUpdateUIFunction = updateUI;
+
 	// objectSelected event
 
 	signals.objectSelected.add( function ( object ) {
 
 		activeObject = object;
 
-		if ( object !== null ) {
+		if (activeObject) {
+			activeObject.isButton = object
+				&& object.userData
+				&& object.userData.__editor
+				&& object.userData.__editor.button;
+		}
+
+		if ( object.isButton ) {
 
 			container.setDisplay( 'block' );
 
-			console.log('objectSelected', object);
+			// const objects = [];
+			// editor.scene.traverse(obj => objects.push(obj))
+
+			// console.log(container);
+
+			// console.log('isButton');
+			updateButtonUI();
+			// updateOutliner( true, objects );
+
+			// activeUpdateUIFunction = updateButtonUI;
+
+			container.setDisplay( 'block' );
+
+		} else if ( object !== null ) {
+
+			container.setDisplay( 'block' );
+
+			// console.log('objectSelected', object);
 
 			updateUI();
-			updateOutliner( object );
+			updateOutliner( false, [object] );
+
+			// activeUpdateUIFunction = updateUI;
 
 		} else {
 
@@ -723,6 +925,7 @@ Sidebar.Animations = function ( editor ) {
 	container.add( loopRow );
 	container.add( clipTrimRow );
 	container.add( animEndRow );
+	container.add( eventTypeRow );
 	container.add( urlRow );
 	container.add( clipSelectRow );
 	container.add( audioRow );
