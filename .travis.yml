@@ -12,3 +12,5 @@ deploy:
   project: ./
   domain: editorplatform-sdk.surge.sh
   skip_cleanup: true
+  on:
+    all_branches: true
