@@ -8,12 +8,15 @@ class TriggererDataParser extends DataParser {
 
     function handleClickTouch(e) {
       for (let targetName in this.clickListeners) {
-        // debugger;
-        if (this.activeClickListenerName[targetName] || this.firstClickListenerName[targetName]) {
-          if (this.clickListeners[targetName][this.activeClickListenerName[targetName]]) {
-            this.clickListeners[targetName][this.activeClickListenerName[targetName] || this.firstClickListenerName[targetName]](e);
+        const listeners = this.clickListeners[targetName];
+        const activeName = this.activeClickListenerName[targetName];
+        const firstName = this.firstClickListenerName[targetName];
+
+        if (activeName || firstName) {
+          if (activeName && listeners[activeName]) {
+            listeners[activeName](e);
           } else {
-            this.clickListeners[targetName][this.firstClickListenerName[targetName]](e);
+            listeners[firstName](e);
           }
         }
       }
@@ -50,7 +53,6 @@ class TriggererDataParser extends DataParser {
 
     switch (this.data('trigger')) {
       case 'autostart':
-        hasAnimation = false;
         if (object.material) {
           object.material.morphTargets = true;
           object.material.skinning = true;
@@ -85,7 +87,6 @@ class TriggererDataParser extends DataParser {
 
           if (intersects[0]) {
             mixer.stopAllAction();
-            console.log('action_play', action);
             action.play().reset();
             events.emit('play');
           }

@@ -100,11 +100,6 @@ class ARParser {
 
     const events = new Events();
 
-    this.parsers.forEach(parser => {
-      if (parser.test('animations') && parser.parseBeforeAction)
-        parser.parseBeforeAction();
-    });
-
     this.runParsers('animations', [], 'parseBeforeAction');
     this.activeAction = this.activeClip && this.activeMixer.clipAction(this.activeClip, object);
     this.runParsers('animations', [data, events]);
