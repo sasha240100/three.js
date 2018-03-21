@@ -2,16 +2,18 @@ class TriggererDataParser extends DataParser {
   constructor(parser) {
     super(parser);
     this.listeners = [];
-    this.clickListeners = [];
-    this.activeClickListenerName = null;
-    this.firstClickListenerName = null;
+    this.clickListeners = {};
+    this.activeClickListenerName = [];
+    this.firstClickListenerName = [];
 
     function handleClickTouch(e) {
-      if (this.activeClickListenerName || this.firstClickListenerName) {
-        if (this.clickListeners[this.activeClickListenerName]) {
-          this.clickListeners[this.activeClickListenerName || this.firstClickListenerName](e);
-        } else {
-          this.clickListeners[this.firstClickListenerName](e);
+      for (let targetName in this.clickListeners) {
+        if (this.activeClickListenerName[targetName] || this.firstClickListenerName[targetName]) {
+          if (this.clickListeners[targetName][this.activeClickListenerName[targetName]]) {
+            this.clickListeners[targetName][this.activeClickListenerName[targetName] || this.firstClickListenerName[targetName]](e);
+          } else {
+            this.clickListeners[targetName][this.firstClickListenerName[targetName]](e);
+          }
         }
       }
     }
@@ -42,6 +44,9 @@ class TriggererDataParser extends DataParser {
 
     let hasAnimation = true;
 
+    const {target} = this.data();
+    const targetName = target || object.name || '__default';
+
     switch (this.data('trigger')) {
       case 'autostart':
         if (object.material) {
@@ -59,9 +64,10 @@ class TriggererDataParser extends DataParser {
           object.material.skinning = true;
         }
 
-        const {target} = this.data();
+        if (!this.clickListeners[targetName])
+          this.clickListeners[targetName] = {};
 
-        this.clickListeners[this.name] = (e) => {
+        this.clickListeners[targetName][this.name] = (e) => {
           if (e.target !== document.querySelector('#player canvas')) return;
 
           raycaster.setFromCamera(mouse, camera);
@@ -82,8 +88,8 @@ class TriggererDataParser extends DataParser {
           }
         }
 
-        if (!this.firstClickListenerName) {
-          this.firstClickListenerName = this.name;
+        if (!this.firstClickListenerName[targetName]) {
+          this.firstClickListenerName[targetName] = this.name;
         }
 
         break;
@@ -115,7 +121,7 @@ class TriggererDataParser extends DataParser {
     });
 
     if (data.clickListener) {
-      this.activeClickListenerName = data.clickListener;
+      this.activeClickListenerName[targetName] = data.clickListener;
     }
   }
 }
