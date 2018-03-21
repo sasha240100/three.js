@@ -42,7 +42,8 @@ class ARParser {
     this.camera = camera;
 
     scene.traverse(object => {
-      this.featureStack(object, 'animations');
+      this.featureStack(object, 'animations', this.animationFeature.bind(this));
+      this.featureObject(object, 'button', this.buttonFeature.bind(this));
     });
   }
 
@@ -53,16 +54,41 @@ class ARParser {
     });
   }
 
-  featureStack(object, featureName) {
-    if (
+  checkFeatureExist(object, featureName) {
+    return (
       object.userData
       && object.userData.__editor
       && object.userData.__editor[featureName]
-    ) {
+    );
+  }
+
+  /*
+   *  featureName: {
+   *    data[0]: data[1]
+   *  }
+   */
+  featureStack(object, featureName, featureParser) {
+    if (this.checkFeatureExist(object, featureName)) {
       Object.entries(object.userData.__editor[featureName]).forEach((data) => {
-        this.animationFeature(object, data[1], data[0]);
+        featureParser(object, data[1], data[0]);
       });
     }
+  }
+
+  /*
+   *  featureName: data
+   */
+  featureObject(object, featureName, featureParser) {
+    if (this.checkFeatureExist(object, featureName)) {
+      featureParser(object, object.userData.__editor[featureName]);
+    }
+  }
+
+  runParsers(featureName, args, methodName = 'parse') {
+    this.parsers.forEach(parser => {
+      if (parser.test(featureName) && parser[methodName])
+        parser[methodName](...(args || []));
+    });
   }
 
   animationFeature(object, data, name) { // name = optional
@@ -79,11 +105,28 @@ class ARParser {
         parser.parseBeforeAction();
     });
 
+    this.runParsers('animations', [], 'parseBeforeAction');
     this.activeAction = this.activeClip && this.activeMixer.clipAction(this.activeClip, object);
+    this.runParsers('animations', [data, events]);
+  }
 
-    this.parsers.forEach(parser => {
-      if (parser.test('animations') && parser.parse)
-        parser.parse(data, events);
-    });
+  buttonFeature(object, data) { // name = optional
+    this.activeObject = object;
+    const events = new Events();
+    // this.activeName = name;
+    // this.activeMixer = new THREE.AnimationMixer();
+    // this.activeClip = this.getClipFromObject(object, data.alias || name);
+    // this.activeData = data;
+    //
+    //
+    // this.parsers.forEach(parser => {
+    //   if (parser.test('animations') && parser.parseBeforeAction)
+    //     parser.parseBeforeAction();
+    // });
+    //
+    // this.runParsers('animations', [], 'parseBeforeAction');
+    // this.activeAction = this.activeClip && this.activeMixer.clipAction(this.activeClip, object);
+    this.runParsers('button', [data, events]);
+    events.emit('play');
   }
 }

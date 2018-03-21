@@ -6,6 +6,8 @@ class AliasDataParser extends DataParser {
   parseBeforeAction() {
     this.clip = THREE.AnimationClip.parse(THREE.AnimationClip.toJSON(this.clip));
 
+    // console.log('clip_parsed');
+
     const data = this.data();
 
     if (data.startTrim || data.endTrim) {
@@ -87,6 +89,8 @@ class AliasDataParser extends DataParser {
         if (track.times.length < 2)
           this.clip.tracks = this.clip.tracks.filter(t => t != track);
       });
+
+      console.log(data, this.clip.tracks);
 
       if (data.endTrim)
         this.clip.duration = data.endTrim / FPS;

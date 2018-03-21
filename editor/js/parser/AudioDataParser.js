@@ -3,7 +3,7 @@ const context = THREE.AudioContext.getContext();
 // TODO: add destroy()
 class AudioDataParser extends DataParser {
   test(featureName) {
-    return featureName === 'animations';
+    return featureName === 'animations' || featureName === 'button';
   }
 
   parse(data, events) {
