@@ -204,6 +204,17 @@ Menubar.File = function ( editor ) {
 					});
 				}
 
+				if (obj.userData
+					&& obj.userData.__editor
+					&& obj.userData.__editor.button
+				) {
+					const _button = obj.userData.__editor.button;
+
+					if (_button.audio) {
+						_button.audio = Array.prototype.slice.call(new Uint8Array(_button.audio));
+					}
+				}
+
 				if (obj.children)
 					obj.children.forEach(child => traverse(child));
 			}

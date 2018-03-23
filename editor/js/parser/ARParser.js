@@ -1,10 +1,20 @@
+let destroyableEvents = [];
+
 class ARParser {
+  static Events() {
+    const ev = new Events();
+    destroyableEvents.push(ev);
+
+    return ev;
+  }
+
   constructor(dom) {
   	this.raycaster = new THREE.Raycaster();
   	this.mouse = new THREE.Vector2();
     this.activeData = null;
+    this.destroyers = [];
 
-  	window.addEventListener( 'mousemove', (event) => {
+  	window.addEventListener('mousemove', (event) => {
   		const rect = dom.getBoundingClientRect();
 
   		this.mouse.x = ( (event.clientX - rect.left) / dom.clientWidth ) * 2 - 1;
@@ -12,6 +22,7 @@ class ARParser {
   	}, false );
 
     this.parsers = [
+      new ButtonDataParser(this),
       new AliasDataParser(this),
       new ActionDataParser(this),
       new AudioDataParser(this),
@@ -86,8 +97,13 @@ class ARParser {
 
   runParsers(featureName, args, methodName = 'parse') {
     this.parsers.forEach(parser => {
-      if (parser.test(featureName) && parser[methodName])
+      if (parser.test(featureName) && parser[methodName]) {
+        parser.featureName = featureName;
         parser[methodName](...(args || []));
+
+        if (parser.destroy)
+          this.destroyers.push(parser.destroy.bind(parser));
+      }
     });
   }
 
@@ -98,7 +114,9 @@ class ARParser {
     this.activeClip = this.getClipFromObject(object, data.alias || name);
     this.activeData = data;
 
-    const events = new Events();
+    if (!this.activeClip) return;
+
+    const events = ARParser.Events();
 
     this.runParsers('animations', [], 'parseBeforeAction');
     this.activeAction = this.activeClip && this.activeMixer.clipAction(this.activeClip, object);
@@ -107,21 +125,16 @@ class ARParser {
 
   buttonFeature(object, data) { // name = optional
     this.activeObject = object;
-    const events = new Events();
-    // this.activeName = name;
-    // this.activeMixer = new THREE.AnimationMixer();
-    // this.activeClip = this.getClipFromObject(object, data.alias || name);
-    // this.activeData = data;
-    //
-    //
-    // this.parsers.forEach(parser => {
-    //   if (parser.test('animations') && parser.parseBeforeAction)
-    //     parser.parseBeforeAction();
-    // });
-    //
-    // this.runParsers('animations', [], 'parseBeforeAction');
-    // this.activeAction = this.activeClip && this.activeMixer.clipAction(this.activeClip, object);
+    this.activeData = data;
+    const events = ARParser.Events();
+
     this.runParsers('button', [data, events]);
-    events.emit('play');
+
+    // events.emit('play');
+  }
+
+  destroy() {
+    this.destroyers.forEach(destroy => destroy());
+    this.destroyers = [];
   }
 }

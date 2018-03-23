@@ -15,9 +15,11 @@ class AudioDataParser extends DataParser {
 
     const camera = this.parser.camera;
     const object = this.object;
+    const action = this.data('action');
+    const allowAudio = (this.featureName === 'button' && action === 'audio') || this.featureName !== 'button';
 
     events.on('play', () => {
-      if (audio) { // TODO: test() audio
+      if (audio && allowAudio) { // TODO: test() audio
         let delay = 0;
         // var source = window._source = context.createBufferSource();
 
@@ -37,8 +39,8 @@ class AudioDataParser extends DataParser {
         // load a sound and set it as the PositionalAudio object's buffer
         const audioLoader = new THREE.AudioLoader();
         // audioLoader.load( 'sounds/song.ogg', function( buffer ) {
-        console.log(data.audio.slice());
-        context.decodeAudioData(data.audio.slice(), function (audioBuffer) {
+        // console.log(data.audio.slice());
+        context.decodeAudioData(new Uint8Array(data.audio.slice()).buffer, function (audioBuffer) {
           sound.setBuffer(audioBuffer);
           sound.setRefDistance(20);
           setTimeout(() => sound.play(), delay * 1000);
@@ -47,5 +49,9 @@ class AudioDataParser extends DataParser {
         object.add(sound);
       }
     })
+
+    this.destroy = () => {
+      events.off('play');
+    };
   }
 }

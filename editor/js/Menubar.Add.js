@@ -249,6 +249,13 @@ Menubar.Add = function ( editor ) {
 		button.name = 'Button';
 		button.isButton = true;
 
+		// Button editor data
+		button.userData = {
+			__editor: {
+				button: {}
+			}
+		};
+
 		editor.execute( new AddObjectCommand( button ) );
 
 	} );

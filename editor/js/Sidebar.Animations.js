@@ -299,12 +299,13 @@ Sidebar.Animations = function ( editor ) {
 
 	var clipSelect = new UI.Select().setWidth( '182px' ).setFontSize( '12px' ).setValue( '' ).onChange(
 		function (e) {
-			if (!activeObject || !activeClip) return;
+			if (!activeObject) return;
 
 			_.merge(activeObject.userData, {
 				__editor: activeObject.isButton ? {
 					button: {
-						clipSelect: e.target.value
+						clipSelect: e.target.value,
+						objectUUID: clipSelect.objectPairs[e.target.value]
 					}
 				} : {
 					animations: {
@@ -334,6 +335,7 @@ Sidebar.Animations = function ( editor ) {
 		if (!activeObject) return;
 
 		const options = [];
+		const objectPairs = {};
 
 		editor.scene.traverse((object) => {
 			if (
@@ -343,6 +345,7 @@ Sidebar.Animations = function ( editor ) {
 			) {
 				for (let name in object.userData.__editor.animations) {
 					options.push(name);
+					objectPairs[name] = object.uuid;
 				}
 			}
 		});
@@ -353,6 +356,8 @@ Sidebar.Animations = function ( editor ) {
 				{}
 			)
 		);
+
+		clipSelect.objectPairs = objectPairs;
 	}
 
 	clipSelectRow.add( new UI.Text( 'Select clip:' ).setWidth( '90px' ) );
@@ -871,13 +876,16 @@ Sidebar.Animations = function ( editor ) {
 		activeObject = object;
 
 		if (activeObject) {
-			activeObject.isButton = object
+			activeObject.isButton = activeObject.isButton || object
 				&& object.userData
 				&& object.userData.__editor
 				&& object.userData.__editor.button;
 		}
 
-		if ( object.isButton ) {
+		console.log(activeObject);
+
+		// TODO: Solve bug ???
+		if ( activeObject.isButton ) {
 
 			container.setDisplay( 'block' );
 
@@ -888,13 +896,14 @@ Sidebar.Animations = function ( editor ) {
 
 			// console.log('isButton');
 			updateButtonUI();
+			updateClipSelectForButton();
 			// updateOutliner( true, objects );
 
 			// activeUpdateUIFunction = updateButtonUI;
 
 			container.setDisplay( 'block' );
 
-		} else if ( object !== null ) {
+		} else if ( activeObject !== null ) {
 
 			container.setDisplay( 'block' );
 

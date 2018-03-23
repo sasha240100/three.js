@@ -35,8 +35,6 @@ class TriggererDataParser extends DataParser {
     return featureName === 'animations';
   }
 
-  destroy() {}
-
   parse(data, events) {
     const object = this.object;
     const action = this.action;
@@ -59,7 +57,7 @@ class TriggererDataParser extends DataParser {
         }
 
         mixer.stopAllAction();
-        action.play();
+        action.reset().play();
         events.emit('play');
         break;
       case 'click':
@@ -99,7 +97,11 @@ class TriggererDataParser extends DataParser {
         break;
 
       case 'none':
-        hasAnimation = false;
+        if (object.material) {
+          object.material.morphTargets = true;
+          object.material.skinning = true;
+        }
+        
         break;
       default:
         if (object.material) {
@@ -114,8 +116,8 @@ class TriggererDataParser extends DataParser {
 
     function update() {
       // console.log(1);
-      requestAnimationFrame(update);
       mixer.update(1/60);
+      requestAnimationFrame(update);
     }
 
     if (hasAnimation) update();

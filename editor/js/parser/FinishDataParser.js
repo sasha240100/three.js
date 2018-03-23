@@ -1,10 +1,13 @@
 class FinishDataParser extends DataParser {
   test(featureName) {
-    return featureName === 'animations';
+    return featureName === 'animations' || featureName === 'button';
   }
 
   parse(data, events) {
-    const object = this.object;
+    let object = this.object;
+    const scene = this.parser.scene;
+
+    // console.log(data);
 
     events.on('end', () => {
       if (data.action) {
@@ -21,9 +24,18 @@ class FinishDataParser extends DataParser {
             const name = data.clipSelect;
             if (!name) return;
 
+            if (data.objectUUID) {
+              object = scene.getObjectByProperty('uuid', data.objectUUID);
+            }
+
             // Prevent from looping
-            const finishData = Object.create(object.userData.__editor.animations[name]);
-            finishData.clickListener = name;
+            const finishData = Object.assign({}, object.userData.__editor.animations[name]);
+            
+            if (!finishData.trigger || finishData.trigger === 'none') {
+              finishData.trigger = 'autostart';
+            } else {
+              finishData.clickListener = name;
+            }
             // finishData.action = 'none';
 
             this.parser.animationFeature(object, finishData, name);
@@ -33,5 +45,9 @@ class FinishDataParser extends DataParser {
         }
       }
     });
+
+    this.destroy = () => {
+      events.off('end');
+    };
   }
 }
