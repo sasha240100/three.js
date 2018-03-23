@@ -831,10 +831,6 @@ Sidebar.Animations = function ( editor ) {
 			else
 				audioDelay.setValue( 0 );
 
-			if (typeof data.loop === 'boolean')
-				loop.setValue(data.loop);
-
-
 			urlRow.setDisplay( 'none' );
 			clipSelectRow.setDisplay( 'none' );
 
